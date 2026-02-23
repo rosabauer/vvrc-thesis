@@ -8,7 +8,6 @@ section \<open>Ordered Relation Type\<close>
 theory Ordered_Relation
   imports Preference_Relation
           "./Refined_Types/Preference_List"
-          "HOL-Combinatorics.Multiset_Permutations"
 begin
 
 lemma fin_ordered:

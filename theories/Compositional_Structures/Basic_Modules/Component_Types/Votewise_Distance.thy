@@ -26,34 +26,8 @@ fun votewise_distance :: "'a Vote Distance \<Rightarrow> Norm \<Rightarrow>
     then n (map2 (\<lambda> q q'. d (A, q) (A', q')) (to_list V p) (to_list V' p'))
     else \<infinity>)"
 
-subsection \<open>Inference Rules\<close>
 
-lemma symmetric_norm_inv_under_map_permute:
-  fixes
-    d :: "'a Vote Distance" and
-    n :: "Norm" and
-    A A'  :: "'a set" and
-    \<phi> :: "nat \<Rightarrow> nat" and
-    p p'  :: "'a Preference_Relation list"
-  assumes
-    perm: "\<phi> permutes {0 ..< length p}" and
-    len_eq: "length p = length p'" and
-    sym_n: "symmetry n"
-  shows "n (map2 (\<lambda> q q'. d (A, q) (A', q')) p p') =
-      n (map2 (\<lambda> q q'. d (A, q) (A', q')) (permute_list \<phi> p) (permute_list \<phi> p'))"
-proof -
-  have "length (map2 (\<lambda> x y. d (A, x) (A', y)) p p') = length p"
-    using len_eq
-    by simp
-  hence "n (map2 (\<lambda> q q'. d (A, q) (A', q')) p p') =
-      n (permute_list \<phi> (map2 (\<lambda> x y. d (A, x) (A', y)) p p'))"
-    using perm sym_n mset_permute_list atLeast_upt
-    unfolding symmetry_def
-    by fastforce
-  thus ?thesis
-    using perm len_eq atLeast_upt permute_list_map[of _ _ "\<lambda> (q, q'). d (A, q) (A', q')"]
-    by (simp add: permute_list_zip)
-qed
+subsection \<open>Auxiliary Lemmas\<close>
 
 lemma permute_invariant_under_map:
   fixes l l' :: "'a list"
@@ -61,6 +35,103 @@ lemma permute_invariant_under_map:
   shows "map f l <~~> map f l'"
   using assms
   by simp
+
+lemma sorted_list_of_set_nth_equals_card:
+  fixes
+    V :: "'v :: linorder set" and
+    x :: "'v"
+  assumes
+    fin_V: "finite V" and
+    x_V: "x \<in> V"
+  shows "sorted_list_of_set V!(card {v \<in> V. v < x}) = x"
+proof -
+  let ?c = "card {v \<in> V. v < x}" and
+      ?set = "{v \<in> V. v < x}"
+  have "\<forall> v \<in> V. \<exists> n. n < card V \<and> (sorted_list_of_set V!n) = v"
+    using length_sorted_list_of_set sorted_list_of_set_unique in_set_conv_nth fin_V
+    by metis
+  then obtain \<phi> :: "'v \<Rightarrow> nat" where
+    index_\<phi>: "\<forall> v \<in> V. \<phi> v < card V \<and> (sorted_list_of_set V!(\<phi> v)) = v"
+    by metis
+  \<comment> \<open>\<open>\<phi> x = ?c\<close>, i.e., \<open>\<phi> x \<ge> ?c\<close> and \<open>\<phi> x \<le> ?c\<close>\<close>
+  let ?i = "\<phi> x"
+  have inj_\<phi>: "inj_on \<phi> V"
+    using inj_onI index_\<phi>
+    by metis
+  have "\<forall> v \<in> V. \<forall> v' \<in> V. v < v' \<longrightarrow> \<phi> v < \<phi> v'"
+    using leD linorder_le_less_linear sorted_list_of_set_unique
+          sorted_sorted_list_of_set sorted_nth_mono fin_V index_\<phi>
+    by metis
+  hence "\<forall> j \<in> {\<phi> v | v. v \<in> ?set}. j < ?i"
+    using x_V
+    by blast
+  moreover have fin_img: "finite ?set"
+    using fin_V
+    by simp
+  ultimately have "?i \<ge> card {\<phi> v | v. v \<in> ?set}"
+    using set_card_upper_bound
+    by simp
+  hence geq: "?c \<le> ?i"
+    using inj_\<phi>
+    by (simp add: card_image inj_on_subset setcompr_eq_image)
+  have sorted_\<phi>:
+    "\<forall> i < card V. \<forall> j < card V. i < j
+        \<longrightarrow> (sorted_list_of_set V!i) < (sorted_list_of_set V!j)"
+    by (simp add: sorted_wrt_nth_less)
+  have leq: "?i \<le> ?c"
+  proof (rule ccontr, cases "?c < card V")
+    case True
+    let ?A = "\<lambda> j. {sorted_list_of_set V!j}"
+    assume "\<not> ?i \<le> ?c"
+    hence "?c < ?i"
+      by simp
+    hence "\<forall> j \<le> ?c. sorted_list_of_set V!j \<in> V \<and> sorted_list_of_set V!j < x"
+      using sorted_\<phi> geq index_\<phi> x_V fin_V set_sorted_list_of_set
+            length_sorted_list_of_set nth_mem order.strict_trans1
+      by (metis (mono_tags, lifting))
+    hence "{sorted_list_of_set V!j | j. j \<le> ?c} \<subseteq> {v \<in> V. v < x}"
+      by blast
+    also have "{sorted_list_of_set V!j | j. j \<le> ?c} =
+                  {sorted_list_of_set V!j | j. j \<in> {0 ..< (?c + 1)}}"
+      using add.commute
+      by auto
+    also have "\<dots> = (\<Union> j \<in> {0 ..< (?c + 1)}. {sorted_list_of_set V!j})"
+      by blast
+    finally have subset: "(\<Union> j \<in> {0 ..< (?c + 1)}. ?A j) \<subseteq> {v \<in> V. v < x}"
+      by simp
+    have "\<forall> i \<le> ?c. \<forall> j \<le> ?c.
+              i \<noteq> j \<longrightarrow> sorted_list_of_set V!i \<noteq> sorted_list_of_set V!j"
+      using True
+      by (simp add: nth_eq_iff_index_eq)
+    hence "\<forall> i \<in> {0 ..< (?c + 1)}. \<forall> j \<in> {0 ..< (?c + 1)}.
+              (i \<noteq> j \<longrightarrow> {sorted_list_of_set V!i} \<inter> {sorted_list_of_set V!j} = {})"
+      by fastforce
+    hence "disjoint_family_on ?A {0 ..< (?c + 1)}"
+      unfolding disjoint_family_on_def
+      by simp
+    moreover have "\<forall> j \<in> {0 ..< (?c + 1)}. card (?A j) = 1"
+      by simp
+    ultimately have
+      "card (\<Union> j \<in> {0 ..< (?c + 1)}. ?A j) = (\<Sum> j \<in> {0 ..< (?c + 1)}. 1)"
+      using card_UN_disjoint'
+      by fastforce
+    hence "card (\<Union> j \<in> {0 ..< (?c + 1)}. ?A j) = ?c + 1"
+      by simp
+    hence "?c + 1 \<le> ?c"
+      using subset card_mono fin_img
+      by (metis (no_types, lifting))
+    thus False
+      by simp
+  next
+    case False
+    thus False
+      using x_V index_\<phi> geq order_le_less_trans
+      by blast
+  qed
+  thus ?thesis
+    using geq leq x_V index_\<phi>
+    by simp
+qed
 
 lemma linorder_rank_injective:
   fixes
@@ -93,6 +164,142 @@ lemma permute_invariant_under_coinciding_funs:
   using assms
   unfolding permute_list_def
   by simp
+
+lemma to_list_permutes_under_bij:
+  fixes
+    \<pi> :: "'v :: linorder \<Rightarrow> 'v" and
+    V :: "'v set" and
+    p :: "('a, 'v) Profile"
+  assumes "bij \<pi>"
+  shows
+    "let \<phi> = \<lambda> i. card {v \<in> \<pi> ` V. v < \<pi> ((sorted_list_of_set V)!i)}
+      in (to_list V p) = permute_list \<phi> (to_list (\<pi> ` V) (\<lambda> x. p (the_inv \<pi> x)))"
+proof (cases "finite V")
+  case False
+  \<comment> \<open>If \<open>V\<close> is infinite, both lists are empty.\<close>
+  hence "to_list V p = []"
+    by simp
+  moreover have "infinite (\<pi> ` V)"
+    using False assms bij_betw_finite bij_betw_subset top_greatest
+    by metis
+  hence "to_list (\<pi> ` V) (\<lambda> x. p (the_inv \<pi> x)) = []"
+    by simp
+  ultimately show ?thesis
+    by simp
+next
+  case True
+  let
+    ?q = "\<lambda> x. p (the_inv \<pi> x)" and
+    ?img = "\<pi> ` V" and
+    ?n = "length (to_list V p)" and
+    ?perm = "\<lambda> i. card {v \<in> \<pi> ` V. v < \<pi> ((sorted_list_of_set V)!i)}"
+    \<comment> \<open>These are auxiliary statements equating everything with \<open>?n\<close>.\<close>
+  have card_eq: "card ?img = card V"
+    using assms bij_betw_same_card bij_betw_subset top_greatest
+    by metis
+  also have card_length_V: "?n = \<dots>"
+    by simp
+  also have card_length_img: "length (to_list ?img ?q) = card ?img"
+    using True
+    by simp
+  finally have eq_length: "length (to_list ?img ?q) = ?n"
+    by simp
+  show ?thesis
+  proof (unfold Let_def permute_list_def, rule nth_equalityI)
+    \<comment> \<open>The lists have equal lengths.\<close>
+    show
+      "length (to_list V p) =
+          length (map
+            (\<lambda> i. to_list ?img ?q!(card {v \<in> ?img.
+                v < \<pi> (sorted_list_of_set V!i)}))
+              [0 ..< length (to_list ?img ?q)])"
+      using eq_length
+      by simp
+  next
+    \<comment> \<open>The \<open>i\<close>th entries of the lists coincide.\<close>
+    fix i :: "nat"
+    assume in_bnds: "i < ?n"
+    let ?c = "card {v \<in> ?img. v < \<pi> (sorted_list_of_set V!i)}"
+    have "map (\<lambda> i. (to_list ?img ?q)!?c) [0 ..< ?n]!i =
+            p ((sorted_list_of_set V)!i)"
+    proof -
+      have "\<forall> v. v \<in> ?img \<longrightarrow> {v' \<in> ?img. v' < v} \<subseteq> ?img - {v}"
+        by blast
+      moreover have elem_of_img: "\<pi> (sorted_list_of_set V!i) \<in> ?img"
+        using True in_bnds image_eqI nth_mem card_length_V
+              length_sorted_list_of_set set_sorted_list_of_set
+        by metis
+      ultimately have
+        "{v \<in> ?img. v < \<pi> (sorted_list_of_set V!i)}
+      \<subseteq> ?img - {\<pi> (sorted_list_of_set V!i)}"
+        by simp
+      hence "{v \<in> ?img. v < \<pi> (sorted_list_of_set V!i)} \<subset> ?img"
+        using elem_of_img
+        by blast
+      moreover have img_card_eq_V_length: "card ?img = ?n"
+        using card_eq card_length_V
+        by presburger
+      ultimately have card_in_bnds: "?c < ?n"
+        using True finite_imageI psubset_card_mono
+        by (metis (mono_tags, lifting))
+      moreover have img_list_map:
+        "map (\<lambda> i. to_list ?img ?q!?c) [0 ..< ?n]!i = to_list ?img ?q!?c"
+        using in_bnds
+        by simp
+      also have img_list_card_eq_inv_img_list:
+        "\<dots> = ?q ((sorted_list_of_set ?img)!?c)"
+        using in_bnds to_list_simp in_bnds img_card_eq_V_length card_in_bnds
+        by (metis (no_types, lifting))
+      also have img_card_eq_img_list_i:
+        "\<dots> = ?q (\<pi> (sorted_list_of_set V!i))"
+        using True elem_of_img
+        by (simp add: sorted_list_of_set_nth_equals_card)
+      finally show ?thesis
+        using assms bij_betw_imp_inj_on the_inv_f_f
+              img_list_map img_card_eq_img_list_i
+              img_list_card_eq_inv_img_list
+        by metis
+    qed
+    also have "to_list V p!i = p ((sorted_list_of_set V)!i)"
+      using True in_bnds
+      by simp
+    finally show "to_list V p!i =
+        map (\<lambda> i. (to_list ?img ?q)!(card {v \<in> ?img. v < \<pi> (sorted_list_of_set V!i)}))
+          [0 ..< length (to_list ?img ?q)]!i"
+      using in_bnds eq_length Collect_cong card_eq
+      by simp
+  qed
+qed
+
+
+subsection \<open>Inference Rules\<close>
+
+lemma symmetric_norm_inv_under_map_permute:
+  fixes
+    d :: "'a Vote Distance" and
+    n :: "Norm" and
+    A A'  :: "'a set" and
+    \<phi> :: "nat \<Rightarrow> nat" and
+    p p'  :: "'a Preference_Relation list"
+  assumes
+    perm: "\<phi> permutes {0 ..< length p}" and
+    len_eq: "length p = length p'" and
+    sym_n: "symmetry n"
+  shows "n (map2 (\<lambda> q q'. d (A, q) (A', q')) p p') =
+      n (map2 (\<lambda> q q'. d (A, q) (A', q')) (permute_list \<phi> p) (permute_list \<phi> p'))"
+proof -
+  have "length (map2 (\<lambda> x y. d (A, x) (A', y)) p p') = length p"
+    using len_eq
+    by simp
+  hence "n (map2 (\<lambda> q q'. d (A, q) (A', q')) p p') =
+      n (permute_list \<phi> (map2 (\<lambda> x y. d (A, x) (A', y)) p p'))"
+    using perm sym_n mset_permute_list atLeast_upt
+    unfolding symmetry_def
+    by fastforce
+  thus ?thesis
+    using perm len_eq atLeast_upt permute_list_map[of _ _ "\<lambda> (q, q'). d (A, q) (A', q')"]
+    by (simp add: permute_list_zip)
+qed
 
 lemma symmetric_norm_imp_distance_anonymous:
   fixes
@@ -146,7 +353,7 @@ proof (unfold distance_anonymity_def, safe)
       using True
       by simp
     have rn_V_permutes: "to_list V p = permute_list ?perm (to_list ?rn_V ?rn_p)"
-      using assms to_list_permutes_under_bij bij_\<pi> to_list_permutes_under_bij
+      using assms to_list_permutes_under_bij bij_\<pi>
       unfolding comp_def
       by (metis (no_types))
     hence len_V_rn_V_eq: "?len = length (to_list ?rn_V ?rn_p)"

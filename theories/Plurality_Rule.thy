@@ -11,12 +11,14 @@ theory Plurality_Rule
   imports "Compositional_Structures/Basic_Modules/Plurality_Module"
           "Compositional_Structures/Revision_Composition"
           "Compositional_Structures/Elect_Composition"
+          "Compositional_Structures/Basic_Modules/Component_Types/Consensus_Class"
+          "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance_Rationalization"
 begin
 
 text \<open>
   This is a definition of the plurality voting rule as elimination module as well as directly.
   In the former one, the max operator of the set of the scores of all alternatives is evaluated
-  and is used as the threshold value.
+  and is used as the threshold value.-- RB: The third definition is the distance-rationalization.
 \<close>
 
 subsection \<open>Definition\<close>
@@ -31,6 +33,9 @@ fun plurality_rule' :: "('a, 'v, 'a Result) Electoral_Module" where
               {a \<in> A. \<exists> x \<in> A. win_count V p x > win_count V p a},
               {})
         else (A, {}, {}))"
+
+fun plurality_rule'' :: "('a, 'v :: wellorder, 'a Result) Electoral_Module" where
+  "plurality_rule''  V A p = swap_\<R> strong_unanimity V A p "
 
 lemma plurality_revision_equiv:
   fixes

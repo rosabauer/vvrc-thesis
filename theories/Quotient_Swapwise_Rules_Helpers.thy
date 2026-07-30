@@ -3,6 +3,7 @@ theory Quotient_Swapwise_Rules_Helpers
     "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance_Rationalization"
     "Compositional_Structures/Basic_Modules/Component_Types/Quotients/Election_Quotients"
     "Compositional_Structures/Basic_Modules/Component_Types/Consensus"
+    "Compositional_Structures/Basic_Modules/Elect_First_Module"
     "Kemeny_Rule"
     "Compositional_Structures/Basic_Modules/Component_Types/Consensus_Class"
 
@@ -189,6 +190,128 @@ proof (unfold closed_restricted_rel.simps restricted_rel.simps elections_\<K>.si
 qed
     
 
+lemma strong_unanimity_invar_anon_hom:
+  "is_symmetry (elect_r \<circ> fun\<^sub>\<E> (rule_\<K> strong_unanimity))
+     (Invariance (Restr (anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV))
+                        (elections_\<K> strong_unanimity)))"
+proof (unfold is_symmetry.simps, intro allI impI)
+  fix E E' :: "('a, 'v :: wellorder) Election"
+  assume rel: "(E, E') \<in> Restr (anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV))
+                                (elections_\<K> strong_unanimity)"
+  obtain A V p where E_eq: "E = (A, V, p)"
+    using prod_cases3 by blast
+  obtain A' V' p' where E'_eq: "E' = (A', V', p')"
+    using prod_cases3 by blast
+  from rel have
+    memE:  "E \<in> elections_\<K> strong_unanimity" and
+    memE': "E' \<in> elections_\<K> strong_unanimity" and
+    mem:   "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV)"
+    by blast+
+  \<comment> \<open>1. Both are strong-unanimity consensus elections.\<close>
+  have cons_eq: "consensus_\<K> strong_unanimity = strong_unanimity\<^sub>\<C>"
+    unfolding strong_unanimity_def
+    by (simp add: Let_def)
+  from memE obtain w where "(A, V, p) \<in> \<K>\<^sub>\<E> strong_unanimity w"
+    unfolding E_eq elections_\<K>.simps
+    by blast
+  hence raw: "consensus_\<K> strong_unanimity (A, V, p) \<and> finite_profile V A p"
+    unfolding \<K>\<^sub>\<E>.simps
+    by blast
+  hence consE: "strong_unanimity\<^sub>\<C> (A, V, p)"
+    using cons_eq
+    by metis
+  from raw have profE: "profile V A p" and finV: "finite V"
+    by simp_all
+
+  from memE' obtain w' where "(A', V', p') \<in> \<K>\<^sub>\<E> strong_unanimity w'"
+    unfolding E'_eq elections_\<K>.simps
+    by blast
+  hence raw': "consensus_\<K> strong_unanimity (A', V', p') \<and> finite_profile V' A' p'"
+    unfolding \<K>\<^sub>\<E>.simps
+    by blast
+  hence consE': "strong_unanimity\<^sub>\<C> (A', V', p')"
+    using cons_eq
+    by metis
+  from raw' have profE': "profile V' A' p'" and finV': "finite V'"
+    by simp_all
+  \<comment> \<open>2. Extract the two unanimously agreed rankings.\<close>
+  from consE have V_ne: "V \<noteq> {}"
+    by simp
+  from consE obtain r where all_r: "\<forall> v \<in> V. p v = r"
+    by auto
+  from consE' have V'_ne: "V' \<noteq> {}"
+    by simp
+  from consE' obtain r' where all_r': "\<forall> v \<in> V'. p' v = r'"
+    by auto
+  \<comment> \<open>3. Both alternative sets equal UNIV, and vote fractions coincide.\<close>
+  from mem have in_A: "E \<in> elections_\<A> UNIV" and in_A': "E' \<in> elections_\<A> UNIV"
+    unfolding anonymity_homogeneity\<^sub>\<R>.simps
+    by blast+
+  hence A_eq: "A = UNIV" and A'_eq: "A' = UNIV"
+    unfolding E_eq E'_eq elections_\<A>.simps
+    by auto
+  from mem have eq_frac:
+    "\<forall> q. vote_fraction q (A, V, p) = vote_fraction q (A', V', p')"
+    unfolding E_eq E'_eq anonymity_homogeneity\<^sub>\<R>.simps
+    by blast
+  \<comment> \<open>4. The agreed ranking of E has vote fraction 1 \<dots>\<close>
+  have "{v \<in> V. p v = r} = V"
+    using all_r
+    by blast
+  hence count_E: "vote_count r (A, V, p) = card V"
+    by simp
+  have "card V \<noteq> 0"
+    using finV V_ne
+    by (simp add: card_eq_0_iff)
+  hence "Fract (int (card V)) (int (card V)) = 1"
+    by (simp add: Fract_of_int_quotient)
+  hence frac_E: "vote_fraction r (A, V, p) = 1"
+    using count_E finV V_ne
+    by simp
+  \<comment> \<open>\<dots> so equal fractions force the agreed rankings to coincide.\<close>
+  have r_eq: "r' = r"
+  proof (rule ccontr)
+    assume "r' \<noteq> r"
+    with all_r' have "{v \<in> V'. p' v = r} = {}"
+      by blast
+    hence "vote_count r (A', V', p') = 0"
+      by (simp add: card_eq_0_iff)
+    hence "vote_fraction r (A', V', p') = 0"
+      by (simp add: rat_number_collapse)
+    moreover have "vote_fraction r (A', V', p') = 1"
+      using eq_frac frac_E
+      by metis
+    ultimately show False
+      by simp
+  qed
+  \<comment> \<open>5. Same ranking + same alternatives: elect-first is fully determined.\<close>
+  have cond: "nonempty_set\<^sub>\<C> (A, V, p) \<and> nonempty_profile\<^sub>\<C> (A, V, p)
+                \<and> equal_vote\<^sub>\<C>' r (A, V, p)"
+    using all_r V_ne A_eq
+    by simp
+  have cond': "nonempty_set\<^sub>\<C> (A', V', p') \<and> nonempty_profile\<^sub>\<C> (A', V', p')
+                \<and> equal_vote\<^sub>\<C>' r (A', V', p')"
+    using all_r' V'_ne A'_eq r_eq
+    by simp
+  have det: "elect_first_module V A p = elect_first_module V' A' p'"
+    using strong_unanimity'consensus_imp_elect_fst_mod_completely_determined
+          profE profE' cond cond' A_eq A'_eq
+    unfolding well_formed_def
+    by metis
+  \<comment> \<open>6. On consensus elections, the rule is exactly elect-first.\<close>
+  have res_E: "fun\<^sub>\<E> (rule_\<K> strong_unanimity) E = elect_first_module V A p"
+    using consE
+    unfolding E_eq strong_unanimity_def
+    by (simp add: Let_def)
+  have res_E': "fun\<^sub>\<E> (rule_\<K> strong_unanimity) E' = elect_first_module V' A' p'"
+    using consE'
+    unfolding E'_eq strong_unanimity_def
+    by (simp add: Let_def)
+  show "(elect_r \<circ> fun\<^sub>\<E> (rule_\<K> strong_unanimity)) E
+      = (elect_r \<circ> fun\<^sub>\<E> (rule_\<K> strong_unanimity)) E'"
+    using res_E res_E' det
+    by simp
+qed
 
 
 

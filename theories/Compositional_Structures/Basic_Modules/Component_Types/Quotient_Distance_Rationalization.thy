@@ -14,10 +14,10 @@ subsection \<open>Distances\<close>
 
 subsubsection \<open>Definitions\<close>
 
-fun R\<^sub>\<Q> :: "'x Distance \<Rightarrow> 'x set Distance" where
+fun distance\<^sub>\<Q> :: "'x Distance \<Rightarrow> 'x set Distance" where
   "distance\<^sub>\<Q> d A B = (if A = {} \<and> B = {} then 0 else
                   (if A = {} \<or> B = {} then \<infinity> else
-                    \<pi>\<^sub>\<Q> (tup d) (A \<times> B)))"inv
+                    \<pi>\<^sub>\<Q> (tup d) (A \<times> B)))"
 
 fun relation_paths :: "'x rel \<Rightarrow> 'x list set" where
   "relation_paths r =

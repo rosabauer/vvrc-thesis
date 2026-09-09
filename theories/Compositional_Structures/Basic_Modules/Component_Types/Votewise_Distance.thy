@@ -508,4 +508,10 @@ proof (unfold distance_neutrality.simps rewrite_invariance\<^sub>\<D>, safe)
   qed
 qed
 
+lemma dist_avg_norm_eq_normalized_dist:
+  assumes "finite V" and "V \<noteq> {}"
+  shows "votewise_distance d l_one_avg (A,V,p) (A',V,p') =
+  votewise_distance d l_one (A,V,p) (A',V,p')/ ereal( real ( card V))"
+  by (simp add: card_gt_0_iff)
+
 end

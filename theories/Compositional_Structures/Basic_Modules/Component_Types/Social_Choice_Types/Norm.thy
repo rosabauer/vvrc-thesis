@@ -107,6 +107,9 @@ subsection \<open>Common Norms\<close>
 fun l_one :: "Norm" where
   "l_one x = (\<Sum> i < length x. \<bar>x!i\<bar>)"
 
+fun l_one_avg :: "Norm" where
+ "l_one_avg x = (if x = [] then 0 else l_one x / ereal (real (length x)))"
+
 subsection \<open>Properties\<close>
 
 definition symmetry :: "Norm \<Rightarrow> bool" where

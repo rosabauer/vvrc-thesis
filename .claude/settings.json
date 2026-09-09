@@ -1,0 +1,59 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "deny": [
+      "Read(~/.git-credentials)",
+      "Read(~/.ssh/**)",
+      "Read(~/.zshrc)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Bash(git push*)",
+      "Bash(git commit*)",
+      "Bash(git config*)",
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(ssh*)",
+      "Bash(scp*)",
+      "Bash(sudo*)",
+      "Bash(rm -rf*)"
+    ],
+    "ask": [
+      "Bash(git *)",
+      "Edit(ROOT)"
+    ],
+    "allow": [
+      "Bash(isabelle build*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(ls*)",
+      "Bash(grep*)",
+      "Bash(*/bin/isabelle build*)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "autoAllowBashIfSandboxed": false,
+    "network": {
+      "allowedDomains": [
+        "api.anthropic.com",
+        "statsig.anthropic.com",
+        "sentry.io"
+      ],
+      "strictAllowlist": true
+    },
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.git-credentials",
+        "~/.zshrc",
+        "~/.claude"
+      ],
+     "allowWrite": [
+      ".", "/tmp", "~/.isabelle"
+      ]
+    }
+  }
+}

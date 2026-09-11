@@ -508,6 +508,7 @@ proof (unfold distance_neutrality.simps rewrite_invariance\<^sub>\<D>, safe)
   qed
 qed
 
+(* since HW2019 define it this way TBD*)
 lemma dist_avg_norm_eq_normalized_dist:
   assumes "finite V" and "V \<noteq> {}"
   shows "votewise_distance d l_one_avg (A,V,p) (A',V,p') =

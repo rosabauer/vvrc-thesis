@@ -52,6 +52,15 @@ fun simple :: "'x rel \<Rightarrow> 'x set \<Rightarrow> 'x Distance \<Rightarro
       \<exists> a \<in> A. \<forall> B \<in> X // r.
         distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B})"
 
+fun simple_on :: "'x set \<Rightarrow> 'x rel \<Rightarrow> 'x set \<Rightarrow> 'x Distance \<Rightarrow> bool" where
+  "simple_on Y  r X d =
+    (\<forall> A \<in> X // r.
+      \<exists> a \<in> A. \<forall> B \<in> Y // r.
+        distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B})"
+
+abbreviation consensus_simple where
+ "consensus_simple C r X d \<equiv> simple_on (elections_\<K> C) r X d"
+
 fun product' :: "'x rel \<Rightarrow> ('x * 'x) rel" where
   "product' r = {(p\<^sub>1, p\<^sub>2). ((fst p\<^sub>1, fst p\<^sub>2) \<in> r \<and> snd p\<^sub>1 = snd p\<^sub>2)
                           \<or> ((snd p\<^sub>1, snd p\<^sub>2) \<in> r \<and> fst p\<^sub>1 = fst p\<^sub>2)}"
@@ -749,6 +758,30 @@ proof -
     by simp
 qed
 
+lemma simple_on_full_eq_simple:   (* new def at full strength  = old *)
+  "simple_on X r X d = simple r X d"
+  by auto
+
+
+lemma simple_imp_simple_on:
+  fixes
+    Y X :: "'x set" and
+    r :: "'x rel" and
+    d :: "'x Distance"
+  assumes
+    subset: "Y \<subseteq> X" and
+    simple: "simple r X d"
+  shows "simple_on Y r X d"
+proof -
+  have "Y // r \<subseteq> X // r"
+    using subset
+    by (rule quotient_subset)
+  thus ?thesis
+    using simple
+    unfolding simple.simps simple_on.simps
+    by blast
+qed
+
 subsection \<open>Distance Rationalization\<close>
 
 fun (in result) \<R>\<^sub>\<Q> :: "('a, 'v) Election rel \<Rightarrow> ('a, 'v) Election Distance \<Rightarrow>
@@ -775,7 +808,7 @@ theorem (in result) invar_dr_simple_dist_imp_quotient_dr_winners:
     r :: "('a, 'v) Election rel" and
     X A :: "('a, 'v) Election set"
   assumes
-    simple: "simple r X d" and
+    simple: "simple_on (elections_\<K> C) r X d" and
     closed_domain: "closed_restricted_rel r X (elections_\<K> C)" and
     invar_res:
       "is_symmetry (\<lambda> (E :: ('a, 'v) Election).
@@ -831,8 +864,7 @@ proof -
     by blast
   have quot_classes_subset: "(elections_\<K> C) // r \<subseteq> X // r"
     using cons_subset
-    unfolding quotient_def
-    by blast
+    by (rule quotient_subset)
   have preimg_img_imp_cls:
     "\<forall> (y :: 'r set). \<forall> (B :: ('a, 'v) Election set)
       \<in> preimg (\<pi>\<^sub>\<Q> (elect_r \<circ> fun\<^sub>\<E> (rule_\<K> C))) (elections_\<K>\<^sub>\<Q> r C) y.
@@ -841,10 +873,10 @@ proof -
   moreover obtain a :: "('a, 'v) Election" where
     a_in_A: "a \<in> A" and
     a_def_inf_dist:
-      "\<forall> (B :: ('a, 'v) Election set) \<in> X // r.
+      "\<forall> (B :: ('a, 'v) Election set) \<in> (elections_\<K> C) // r.
         distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B}"
     using simple quot_class
-    unfolding simple.simps
+    unfolding simple_on.simps
     by blast
   ultimately have inf_dist_preimg_sets:
     "\<forall> (y :: 'r set). \<forall> (B :: ('a, 'v) Election set)
@@ -989,7 +1021,7 @@ theorem (in result) invar_dr_simple_dist_imp_quotient_dr:
     r :: "('a, 'v) Election rel" and
     X A :: "('a, 'v) Election set"
   assumes
-    simple: "simple r X d" and
+    simple: "simple_on (elections_\<K> C) r X d" and
     closed_domain: "closed_restricted_rel r X (elections_\<K> C)" and
     invar_res:
       "is_symmetry (\<lambda> (E :: ('a, 'v) Election).

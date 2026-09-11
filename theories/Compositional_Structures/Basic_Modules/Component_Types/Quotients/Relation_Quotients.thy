@@ -271,4 +271,14 @@ next
     by metis
 qed
 
+lemma quotient_subset:
+  fixes
+    Y X :: "'x set" and
+    r :: "'x rel"
+  assumes subset: "Y \<subseteq> X"
+  shows "Y // r \<subseteq> X // r"
+  using subset
+  unfolding quotient_def
+  by blast
+
 end

@@ -1228,8 +1228,7 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
   have one_sided:
         "Inf {?d (A, V\<^sub>x, p\<^sub>x) b | b. b \<in> BC}
            = ?d (A, V\<^sub>x, p\<^sub>x) (A, V\<^sub>x, \<lambda> v. R)"
-        if x_fin: "finite V\<^sub>x" and x_ne: "V\<^sub>x \<noteq> {}" and
-           x_carrier: "(A, V\<^sub>x, p\<^sub>x) \<in> ?X"
+        if x_fin: "finite V\<^sub>x" and x_ne: "V\<^sub>x \<noteq> {}"
          for V\<^sub>x :: "'v set" and p\<^sub>x :: "('a, 'v) Profile"
   proof -
     have BC_sub: "BC \<subseteq> unanimity_class A R"
@@ -1296,7 +1295,7 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
         have "(b\<^sub>0, b\<^sub>x) \<in> ?r"
           using b0_carrier bx_X frac_bx
           unfolding b0_eq anonymity_homogeneity\<^sub>\<R>.simps
-          by auto
+          by fastforce (* unknown isues with blast here*)
         hence bx_BC: "b\<^sub>x \<in> BC"
           using BC_img by blast
         have dist_bx: "?d (A, V\<^sub>x, p\<^sub>x) b\<^sub>x
@@ -1369,35 +1368,81 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
           by simp
       qed
    finally show ?thesis .
- next 
 
-   case True
+next
+    case True
     have all_inf: "?d x b = \<infinity>"
-        if x_in: "x \<in> AC" and b_in: "b \<in> BC" for x b
-      proof -
-        obtain A\<^sub>x V\<^sub>x p\<^sub>x where x_eq: "x = (A\<^sub>x, V\<^sub>x, p\<^sub>x)"
-          using prod_cases3 by blast
-        have "(a, x) \<in> ?r"
-          using x_in AC_img by blast
-        hence x_empty: "V\<^sub>x = {}"
-          using anon_hom_empty_iff[OF this[unfolded a_eq x_eq]] True
-          by blast
-        obtain V\<^sub>b p\<^sub>b where b_eq: "b = (A, V\<^sub>b, p\<^sub>b)" and b_ne: "V\<^sub>b \<noteq> {}"
-          using BC_char[OF b_in] by blast
-        show ?thesis
-          using x_empty b_ne
-          unfolding x_eq b_eq
-          by simp
-      qed
-
-      have "{?d x b | x b. x \<in> AC \<and> b \<in> BC} = {\<infinity>}"
-        using all_inf a_in b0_in_BC by blast
-      moreover have "{?d a b | b. b \<in> BC} = {\<infinity>}"
-        using all_inf[OF a_in] b0_in_BC by blast
-      ultimately show ?thesis
-        unfolding distance_infimum\<^sub>\<Q>.simps
+      if x_in: "x \<in> AC" and b_in: "b \<in> BC" for x b
+    proof -
+      obtain A\<^sub>x V\<^sub>x p\<^sub>x where x_eq: "x = (A\<^sub>x, V\<^sub>x, p\<^sub>x)"
+        using prod_cases3 by blast
+       have "(a, x) \<in> ?r"
+         using x_in AC_img by blast
+       hence ax_rel: "((A\<^sub>a, V\<^sub>a, p\<^sub>a), (A\<^sub>x, V\<^sub>x, p\<^sub>x)) \<in> ?r"
+         by (simp only: a_eq x_eq)
+       have x_empty: "V\<^sub>x = {}"
+         using anon_hom_empty_iff[OF ax_rel] True by blast
+      obtain V\<^sub>b p\<^sub>b where b_eq: "b = (A, V\<^sub>b, p\<^sub>b)" and b_ne: "V\<^sub>b \<noteq> {}"
+        using BC_char[OF b_in] by blast
+      show ?thesis
+        using x_empty b_ne
+        unfolding x_eq b_eq
         by simp
- qed
+    qed
+
+    have inst: "?d a b\<^sub>0 = \<infinity>"
+      using all_inf a_in b0_in_BC
+      by blast
+    have "{?d x b | x b. x \<in> AC \<and> b \<in> BC} = {\<infinity>}"
+    proof (intro equalityI subsetI)
+      fix y
+      assume "y \<in> {?d x b | x b. x \<in> AC \<and> b \<in> BC}"
+      then obtain x b where "y = ?d x b" and "x \<in> AC" and "b \<in> BC"
+        by blast
+      hence "y = \<infinity>"
+        using all_inf
+        by blast
+      thus "y \<in> {\<infinity>}"
+        by simp
+
+    next
+      fix y :: ereal
+      assume "y \<in> {\<infinity>}"
+      moreover have "?d a b\<^sub>0 \<in> {?d x b | x b. x \<in> AC \<and> b \<in> BC}"
+        using a_in b0_in_BC
+        by blast
+      ultimately show "y \<in> {?d x b | x b. x \<in> AC \<and> b \<in> BC}"
+        using inst
+        by simp
+    qed
+    moreover have "{?d a b | b. b \<in> BC} = {\<infinity>}"
+    proof (intro equalityI subsetI)
+      fix y
+      assume "y \<in> {?d a b | b. b \<in> BC}"
+      then obtain b where "y = ?d a b" and "b \<in> BC"
+        by blast
+      hence "y = \<infinity>"
+        using all_inf a_in
+        by blast
+      thus "y \<in> {\<infinity>}"
+        by simp
+
+    next
+      fix y :: ereal
+      assume "y \<in> {\<infinity>}"
+      moreover have "?d a b\<^sub>0 \<in> {?d a b | b. b \<in> BC}"
+        using b0_in_BC
+        by blast
+      ultimately show "y \<in> {?d a b | b. b \<in> BC}"
+        using inst
+        by simp
+    qed
+    ultimately show ?thesis
+      unfolding distance_infimum\<^sub>\<Q>.simps
+      by simp
+  qed
 qed
+qed
+
 
 end

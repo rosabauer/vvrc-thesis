@@ -47,20 +47,21 @@ proof -
 qed
 
 lemma (in result) limit_invar_anon_hom:
-  "is_symmetry
+  fixes A :: "'a set"
+  shows  "is_symmetry
       (\<lambda> E :: ('a, 'v) Election. limit (alternatives_\<E> E) UNIV)
-      (Invariance (anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV)))"
+      (Invariance (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)))"
 proof -
   have "\<forall> E E' :: ('a, 'v) Election.
-          (E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV)
+          (E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)
             \<longrightarrow> alternatives_\<E> E = alternatives_\<E> E'"
   proof (intro allI impI)
     fix E E' :: "('a, 'v) Election"
-    assume "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> UNIV)"
-    hence "E \<in> elections_\<A> UNIV \<and> E' \<in> elections_\<A> UNIV"
+    assume "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
+    hence "E \<in> elections_\<A> A \<and> E' \<in> elections_\<A> A"
       unfolding anonymity_homogeneity\<^sub>\<R>.simps
       by blast
-    hence "alternatives_\<E> E = UNIV \<and> alternatives_\<E> E' = UNIV"
+    hence "alternatives_\<E> E = A \<and> alternatives_\<E> E' = A"
       unfolding elections_\<A>.simps
       by blast
     thus "alternatives_\<E> E = alternatives_\<E> E'"
@@ -225,6 +226,34 @@ proof (unfold closed_restricted_rel.simps restricted_rel.simps elections_\<K>.si
   thus "(A\<^sub>2, V', p') \<in> \<Union> (range (\<K>\<^sub>\<E> (strong_unanimity_in A)))"
     by blast
 qed
+
+
+text \<open>
+  On its consensus set, the restricted strong-unanimity rule is invariant
+  under the anonymity-homogeneity relation: related consensus elections
+  elect the same singleton, by the transfer lemma.
+\<close>
+
+lemma strong_unanimity_in_invar_anon_hom:
+  fixes A :: "'a set"
+  shows "is_symmetry
+      (elect_r \<circ> fun\<^sub>\<E>(rule_\<K>(strong_unanimity_in A)) E)
+       (Invariance (Restr (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))
+        (elections_\<K> (strong_unanimity_in A)
+      :: ('a, 'v :: wellorder) Election set)))"
+proof (unfold is_symmetry.simps, intro allI impI)
+  fix E E' :: "('a, 'v) Election"
+  assume "(E, E') \<in> Restr (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))
+          (elections_\<K> (strong_unanimity_in A))"
+  hence rel: "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)" and
+        E_Y: "E \<in> elections_\<K> (strong_unanimity_in A)"
+    by blast+
+ from E_Y obtain w where "E \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w
+                      \<and> E' \<in>  \<K>\<^sub>\<E> (strong_unanimity_in A) w"
+   using strong_unanimity_in_anon_hom_transfer[OF rel]
+   by blast
+  hence cons_pair: "E \<in>\<K>\<^sub>\<E> (strong_unanimity_in A) w
+
 
 
 

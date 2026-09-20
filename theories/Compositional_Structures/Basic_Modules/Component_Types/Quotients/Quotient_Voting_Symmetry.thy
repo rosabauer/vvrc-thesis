@@ -10,7 +10,7 @@ section ‹Symmetry of Quotient Voting Rules›
 
 theory Quotient_Voting_Symmetry
   imports Election_Quotients
-          "../Social_Choice_Types/Property_Interpretations"
+          "../Electoral_Module"
 begin
 
 subsection ‹The Alternative-Set Stabilizer›
@@ -33,6 +33,15 @@ lemma alt_stabilizer_rewrite:
   using rewrite_carrier
   by blast
 
+lemma φ_neutral_apply:
+  fixes
+    𝒳 :: "('a, 'v) Election set" and
+    π :: "'a ⇒ 'a" and
+    E :: "('a, 'v) Election"
+  assumes "E ∈ 𝒳"
+  shows "φ_neutral 𝒳 π E = alts_rename π E"
+  by (simp only: φ_neutral.simps extensional_continuation.simps if_P[OF assms])
+  
 subsection ‹Auxiliary Lemmas on Renaming›
 
 lemma rel_rename_id: "rel_rename id = id"
@@ -173,30 +182,31 @@ proof -
     using rel_rename_compositional[of π "the_inv π"]
           bij_the_inv_comp(2)[OF bij_π] rel_rename_id
     by metis
+    have pt_inv: "⋀ q. rel_rename (the_inv π) (rel_rename π q) = q"
+    using rr_inv
+    by (metis comp_apply id_apply)
+  have pt_inv': "⋀ q. rel_rename π (rel_rename (the_inv π) q) = q"
+    using rr_inv'
+    by (metis comp_apply id_apply)
   have set_eq: "{v ∈ voters_ℰ E. rel_rename π (profile_ℰ E v) = r}
       = {v ∈ voters_ℰ E. profile_ℰ E v = rel_rename (the_inv π) r}"
-  proof (safe)
+  proof (rule Collect_cong)
     fix v :: "'v"
-    assume "r = rel_rename π (profile_ℰ E v)"
-    thus "profile_ℰ E v = rel_rename (the_inv π) (rel_rename π (profile_ℰ E v))"
-      using rr_inv
-      by (metis comp_apply id_apply)
-  next
-    fix v :: "'v"
-    assume "profile_ℰ E v = rel_rename (the_inv π) r"
-    thus "rel_rename π (profile_ℰ E v) = r"
-      using rr_inv'
-      by (metis comp_apply id_apply)
+    show "(v ∈ voters_ℰ E ∧ rel_rename π (profile_ℰ E v) = r)
+        = (v ∈ voters_ℰ E ∧ profile_ℰ E v = rel_rename (the_inv π) r)"
+      using pt_inv pt_inv'
+      by metis
   qed
-  have "vote_count r (alts_rename π E)
+   have "vote_count r (alts_rename π E)
       = card {v ∈ voters_ℰ E. rel_rename π (profile_ℰ E v) = r}"
     unfolding vote_count.simps alts_rename.simps
     by (simp add: comp_def)
   also have "… = card {v ∈ voters_ℰ E. profile_ℰ E v = rel_rename (the_inv π) r}"
-    by (rule arg_cong[of _ _ card, OF set_eq])
+    unfolding set_eq
+    by (rule refl)
   also have "… = vote_count (rel_rename (the_inv π) r) E"
     unfolding vote_count.simps
-    by simp
+    by (rule refl)
   finally show ?thesis .
 qed
 
@@ -249,9 +259,10 @@ proof (intro ballI allI impI)
   assume
     stab: "π ∈ alt_stabilizer A" and
     rel: "(E, E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-  have bij_π: "bij π"
-    using stab alt_stabilizer_rewrite
-    by blast
+   have bij_π: "bij π"
+    using stab
+    unfolding alt_stabilizer_rewrite
+    by simp
   have E_in: "E ∈ elections_𝒜 A" and
        E'_in: "E' ∈ elections_𝒜 A" and
        fin_eq: "finite (voters_ℰ E) = finite (voters_ℰ E')" and
@@ -259,12 +270,10 @@ proof (intro ballI allI impI)
     using rel
     unfolding anonymity_homogeneity⇩ℛ.simps
     by blast+
-  have φ_E: "φ_neutral (elections_𝒜 A) π E = alts_rename π E"
-    using E_in
-    by simp
+ have φ_E: "φ_neutral (elections_𝒜 A) π E = alts_rename π E"
+    by (rule φ_neutral_apply[OF E_in])
   have φ_E': "φ_neutral (elections_𝒜 A) π E' = alts_rename π E'"
-    using E'_in
-    by simp
+    by (rule φ_neutral_apply[OF E'_in])
   have img_E: "alts_rename π E ∈ elections_𝒜 A"
     using stabilizer_preserves_elections_𝒜 stab E_in
     by blast
@@ -302,9 +311,10 @@ proof (intro ballI)
   hence stab_σ: "the_inv π ∈ alt_stabilizer A"
     using alt_stabilizer_the_inv_closed
     by blast
-  have bij_π: "bij π"
-    using stab_π alt_stabilizer_rewrite
-    by blast
+   have bij_π: "bij π"
+    using stab_π
+    unfolding alt_stabilizer_rewrite
+    by simp
   have "∀ E ∈ elections_𝒜 A.
       φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E) = E
     ∧ φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E) = E"
@@ -317,38 +327,40 @@ proof (intro ballI)
     have img_σ: "alts_rename (the_inv π) E ∈ elections_𝒜 A"
       using stabilizer_preserves_elections_𝒜 stab_σ E_in
       by blast
-    have fst_dir:
-      "φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E)
-        = alts_rename (the_inv π) (alts_rename π E)"
-      using E_in img_π
-      by simp
-    have "alts_rename (the_inv π) (alts_rename π E)
-        = alts_rename (the_inv π ∘ π) E"
-      using alts_rename_compositional comp_apply
-      by metis
-    hence eq_1:
+        have eq_1:
       "φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E) = E"
-      using fst_dir bij_the_inv_comp(1)[OF bij_π] alts_rename_id
-      by metis
-    have snd_dir:
-      "φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E)
-        = alts_rename π (alts_rename (the_inv π) E)"
-      using E_in img_σ
-      by simp
-    have "alts_rename π (alts_rename (the_inv π) E)
-        = alts_rename (π ∘ the_inv π) E"
-      using alts_rename_compositional comp_apply
-      by metis
-    hence eq_2:
+    proof -
+      have "φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E)
+          = alts_rename (the_inv π) (alts_rename π E)"
+        unfolding φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_π]
+        by (rule refl)
+      also have "… = alts_rename (the_inv π ∘ π) E"
+        by (metis alts_rename_compositional comp_apply)
+      also have "… = E"
+        unfolding bij_the_inv_comp(1)[OF bij_π]
+        by (rule alts_rename_id)
+      finally show ?thesis .
+    qed
+    have eq_2:
       "φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E) = E"
-      using snd_dir bij_the_inv_comp(2)[OF bij_π] alts_rename_id
-      by metis
+    proof -
+      have "φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E)
+          = alts_rename π (alts_rename (the_inv π) E)"
+        unfolding φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_σ]
+        by (rule refl)
+      also have "… = alts_rename (π ∘ the_inv π) E"
+        by (metis alts_rename_compositional comp_apply)
+      also have "… = E"
+        unfolding bij_the_inv_comp(2)[OF bij_π]
+        by (rule alts_rename_id)
+      finally show ?thesis .
+    qed
     show
       "φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E) = E
       ∧ φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E) = E"
       using eq_1 eq_2
       by blast
-  qed
+qed
   thus "∃ σ ∈ alt_stabilizer A. ∀ E ∈ elections_𝒜 A.
       φ_neutral (elections_𝒜 A) σ (φ_neutral (elections_𝒜 A) π E) = E
     ∧ φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) σ E) = E"

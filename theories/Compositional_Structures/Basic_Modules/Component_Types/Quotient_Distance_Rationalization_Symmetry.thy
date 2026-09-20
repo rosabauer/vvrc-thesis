@@ -7,7 +7,7 @@
 section ‹Symmetry Properties of Quotient Distance-Rationalized Rules›
 
 theory Quotient_Distance_Rationalization_Symmetry
-  imports Quotient_Distance_Rationalization
+  imports  Quotient_Distance_Rationalization
 begin
 
 text ‹

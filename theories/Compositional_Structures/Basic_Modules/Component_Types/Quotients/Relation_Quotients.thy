@@ -515,7 +515,7 @@ proof -
     by blast
   thus ?thesis
     unfolding img_X_eq_cls
-    by (rule quotientI) (* WIP *)
+    by (rule quotientI)
 qed
 
 end

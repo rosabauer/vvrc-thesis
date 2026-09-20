@@ -18,9 +18,10 @@ subsection ‹The Alternative-Set Stabilizer›
 text ‹
   In group theory, stabilizers are restrictions on a set 
   that state that an operation never maps the elements of a set, 
-  in this case the election alternatives, outside of the set.
-  They are  the neutrality symmetries
-  that descend to the anon-hom quotient over A (and thus to the simplex).
+  in this case the election alternatives, outside of the set,
+  but only switches them bijectively within the set.
+  They are  the neutrality symmetries that descend to
+  the anon-hom quotient over A (and thus to the simplex).
 ›
 
 definition alt_stabilizer :: "'a set ⇒ ('a ⇒ 'a) set" where
@@ -202,11 +203,9 @@ proof -
     unfolding vote_count.simps alts_rename.simps
     by (simp add: comp_def)
   also have "… = card {v ∈ voters_ℰ E. profile_ℰ E v = rel_rename (the_inv π) r}"
-    unfolding set_eq
-    by (rule refl)
+    by (simp only: set_eq)
   also have "… = vote_count (rel_rename (the_inv π) r) E"
-    unfolding vote_count.simps
-    by (rule refl)
+    by (simp only: vote_count.simps)
   finally show ?thesis .
 qed
 
@@ -222,9 +221,7 @@ proof -
   have "voters_ℰ (alts_rename π E) = voters_ℰ E"
     by simp
   thus ?thesis
-    using vote_count_alts_rename[OF bij_π]
-    unfolding vote_fraction.simps
-    by presburger (* alt: by simp *)
+    by (simp only: vote_fraction.simps vote_count_alts_rename[OF bij_π])
 qed
 
 subsection ‹Neutrality Action Descends to Anon-Hom Classes›
@@ -243,7 +240,7 @@ qed
 text ‹
   Compatibility: stabilizer renamings map anonhom-related
   elections to related elections, since they permute vote fractions over
-  ballots and leave the alternatives untouched.
+  ballots and leave the voters unchanged.
 ›
 
 lemma φ_neutral_elections_𝒜_compat:
@@ -332,8 +329,7 @@ proof (intro ballI)
     proof -
       have "φ_neutral (elections_𝒜 A) (the_inv π) (φ_neutral (elections_𝒜 A) π E)
           = alts_rename (the_inv π) (alts_rename π E)"
-        unfolding φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_π]
-        by (rule refl)
+        by (simp only: φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_π])
       also have "… = alts_rename (the_inv π ∘ π) E"
         by (metis alts_rename_compositional comp_apply)
       also have "… = E"
@@ -346,8 +342,7 @@ proof (intro ballI)
     proof -
       have "φ_neutral (elections_𝒜 A) π (φ_neutral (elections_𝒜 A) (the_inv π) E)
           = alts_rename π (alts_rename (the_inv π) E)"
-        unfolding φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_σ]
-        by (rule refl)
+        by (simp only: φ_neutral_apply[OF E_in] φ_neutral_apply[OF img_σ])
       also have "… = alts_rename (π ∘ the_inv π) E"
         by (metis alts_rename_compositional comp_apply)
       also have "… = E"
@@ -431,7 +426,7 @@ subsection ‹Theorem: Neutrality Lifts to the Quotient›
 text ‹
   If an electoral module is invariant under the
   anon-hom relation on elections over A (so it induces a
-  well-defined quotient rule via π⇩𝒬) and neutral on well-formed elections,
+  well-defined quotient rule via π𝒬) and neutral on well-formed elections,
   then the quotient rule is equivariant on the anon-hom classes
   with the stabilizer of A, ie neutral as a rule on the quotient
   (so also on the simplex).

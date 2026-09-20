@@ -337,42 +337,35 @@ proof -
       x_in_s: "x ∈ s"
       using quotientE
       by blast
-    hence x_in_X: "x ∈ X"
-      using equiv_rel equiv_class_self
-      by blast
+    have x_in_X: "x ∈ X"
+      unfolding X_eq_cls_x
+      by (rule equiv_class_self[OF equiv_rel x_in_s])
     have img_X_eq_cls: "φ g ` X = r `` {φ g x}"
-      using act_cls g_in_T x_in_s X_eq_cls_x
-      by blast
-    moreover have "φ g x ∈ φ g ` X"
-      using x_in_X
-      by blast
-    ultimately have "(φ g x, φ g x) ∈ r"
-      by auto
-    hence img_x_in_s: "φ g x ∈ s"
-      using equiv_rel equiv_type
-      by blast
-    \<comment> ‹Note: this uses that \<open>equiv s r\<close> entails \<open>r ⊆ s × s\<close> (\<open>equiv_type\<close>),
-        which true because of the VMCF's structure›
-    hence img_cls: "r `` {φ g x} ∈ s // r"
-      using quotientI
-      by metis
+      unfolding X_eq_cls_x
+      by (rule bspec[OF bspec[OF act_cls g_in_T] x_in_s])
     have img_x_in_own_cls: "φ g x ∈ r `` {φ g x}"
-      using equiv_rel img_x_in_s equiv_class_self
+      using x_in_X img_X_eq_cls
       by blast
+    hence img_x_in_s: "φ g x ∈ s"
+      using equiv_type[OF equiv_rel]
+      by blast
+    ─ ‹Uses ‹equiv_type›: ‹equiv s r› entails ‹r ⊆ s × s›.›
+    have img_cls: "r `` {φ g x} ∈ s // r"
+      by (rule quotientI[OF img_x_in_s])
     have eq_1: "π⇩𝒬 f (φ g ` X) = f (φ g x)"
-      using pass_to_quotient[OF invar equiv_rel] img_cls
-            img_x_in_own_cls img_X_eq_cls
-      by metis
+      unfolding img_X_eq_cls
+      by (rule bspec[OF bspec[OF pass_to_quotient[OF invar equiv_rel]
+            img_cls] img_x_in_own_cls])
     have "(φ g, ψ g) ∈ {(φ z, ψ z) | z. z ∈ T}"
       using g_in_T
       by blast
     hence eq_2: "f (φ g x) = ψ g (f x)"
       using equivar x_in_s
       unfolding action_induced_equivariance_def is_symmetry.simps
-      by fastforce (* alt: by blast *)
+      by fastforce (* alt: by fast *)
     have eq_3: "π⇩𝒬 f X = f x"
-      using pass_to_quotient[OF invar equiv_rel] cls_X x_in_X
-      by metis
+      by (rule bspec[OF bspec[OF pass_to_quotient[OF invar equiv_rel]
+            cls_X] x_in_X])
     show "π⇩𝒬 f (φ g ` X) = ψ g (π⇩𝒬 f X)"
       using eq_1 eq_2 eq_3
       by simp
@@ -473,10 +466,9 @@ corollary pass_to_quotient_equivar':
     invs: "∀ g ∈ T. ∃ h ∈ T. ∀ x ∈ s. φ h (φ g x) = x ∧ φ g (φ h x) = x"
   shows "is_symmetry (π⇩𝒬 f)
             (action_induced_equivariance T (s // r) (set_action φ) ψ)"
-  using pass_to_quotient_equivar[OF equiv_rel _ equivar
-          rel_compat_imp_act_maps_classes[OF equiv_rel compat invs]]
-        invar invariance_is_congruence
-  by blast
+    using pass_to_quotient_equivar[OF equiv_rel
+          invar[unfolded invariance_is_congruence] equivar
+          rel_compat_imp_act_maps_classes[OF equiv_rel compat invs]] .
 
 
 end

@@ -35,16 +35,6 @@ lemma swap_l_one_simple:
            (votewise_distance swap l_one :: ('a, 'v :: linorder) Election Distance)"
   sorry
 
-lemma anon_hom_equiv:
-  fixes A :: "'a set"
-  shows "equiv (elections_\<A> A) (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))"
-proof -
-  have "\<forall> E \<in> elections_\<A> A. finite (voters_\<E> E)"
-    unfolding elections_\<A>.simps
-    by blast
-  thus ?thesis
-    by (rule anonymity_homogeneity_is_equivalence)
-qed
 
 lemma (in result) limit_invar_anon_hom:
   fixes A :: "'a set"

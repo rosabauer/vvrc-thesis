@@ -288,7 +288,7 @@ text ‹
   congruence in the sense of the quotient  (\<open>respects\<close>).
 ›
 
-lemma invariance_is_congruence:
+lemma invar_is_congruence:
   fixes
     f :: "'x ⇒ 'y" and
     r :: "'x rel"
@@ -461,13 +461,61 @@ corollary pass_to_quotient_equivar':
     equiv_rel: "equiv s r" and
     invar: "is_symmetry f (Invariance r)" and
     equivar: "is_symmetry f (action_induced_equivariance T s φ ψ)" and
+
+    (* Compatibility and Inversibility elegantly 
+    prove show that you can pull φ into the anon-hom relation. *)
+
     compat: "∀ g ∈ T. ∀ x y. (x, y) ∈ r ⟶ (φ g x, φ g y) ∈ r" and
     invs: "∀ g ∈ T. ∃ h ∈ T. ∀ x ∈ s. φ h (φ g x) = x ∧ φ g (φ h x) = x"
   shows "is_symmetry (π⇩𝒬 f)
             (action_induced_equivariance T (s // r) (set_action φ) ψ)"
     using pass_to_quotient_equivar[OF equiv_rel
-          invar[unfolded invariance_is_congruence] equivar
+          invar[unfolded invar_is_congruence] equivar
           rel_compat_imp_act_maps_classes[OF equiv_rel compat invs]] .
 
+text ‹
+  Under the same two conditions, the elementwise action of a
+  transformation sends equivalence classes to equivalence classes,
+  ie the quotient is closed under the induced set action.
+›
+
+lemma act_maps_classes_into_quotient:
+  fixes
+    r :: "'x rel" and
+    s :: "'x set" and
+    T :: "'z set" and
+    φ :: "('z, 'x) binary_fun" and
+    g :: "'z" and
+    X :: "'x set"
+  assumes
+    equiv_rel: "equiv s r" and
+    compat: "∀ g ∈ T. ∀ x y. (x, y) ∈ r ⟶ (φ g x, φ g y) ∈ r" and
+    invs: "∀ g ∈ T. ∃ h ∈ T. ∀ x ∈ s. φ h (φ g x) = x ∧ φ g (φ h x) = x" and
+    g_in_T: "g ∈ T" and
+    cls_X: "X ∈ s // r"
+  shows "φ g ` X ∈ s // r"
+proof -
+  obtain x :: "'x" where
+    X_eq_cls_x: "X = r `` {x}" and
+    x_in_s: "x ∈ s"
+    using cls_X quotientE
+    by blast
+  have img_X_eq_cls: "φ g ` X = r `` {φ g x}"
+    unfolding X_eq_cls_x
+    by (rule bspec[OF bspec[OF rel_compat_imp_act_maps_classes[OF
+          equiv_rel compat invs] g_in_T] x_in_s])
+  have "x ∈ X"
+    unfolding X_eq_cls_x
+    by (rule equiv_class_self[OF equiv_rel x_in_s])
+  hence "φ g x ∈ r `` {φ g x}"
+    using img_X_eq_cls
+    by blast
+  hence "φ g x ∈ s"
+    using equiv_type[OF equiv_rel]
+    by blast
+  thus ?thesis
+    unfolding img_X_eq_cls
+    by (rule quotientI) (* WIP *)
+qed
 
 end

@@ -746,6 +746,17 @@ definition vote_simplex :: "(rat^'b) set" where
 
 subsubsection \<open>Auxiliary Lemmas\<close>
 
+lemma anon_hom_equiv:
+  fixes A :: "'a set"
+  shows "equiv (elections_\<A> A) (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))"
+proof -
+  have "\<forall> E \<in> elections_\<A> A. finite (voters_\<E> E)"
+    unfolding elections_\<A>.simps
+    by blast
+  thus ?thesis
+    by (rule anonymity_homogeneity_is_equivalence)
+qed
+
 lemma convex_combination_in_convex_hull:
   fixes
     X :: "(real^'b) set" and

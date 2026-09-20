@@ -133,18 +133,19 @@ proof -
     by simp
   have wf': "(π ` B, V, rel_rename π ∘ p) ∈ well_formed_elections"
     using alternatives_rename_sound[OF bij_π wf ren_eq] .
-  have "π ` B = A"
+   have img_B: "π ` B = A"
     using B_eq_A img_A
     by simp
-  moreover have "∀ v. v ∉ V ⟶ (rel_rename π ∘ p) v = {}"
+  have def_prof': "∀ v. v ∉ V ⟶ (rel_rename π ∘ p) v = {}"
     using def_prof rel_rename_empty
     by simp
-  ultimately show ?thesis
-    using wf' fin_V ren_eq E_eq
-    unfolding elections_𝒜.simps
-    by (metis (mono_tags, lifting) IntI alternatives_ℰ.simps
-          mem_Collect_eq profile_ℰ.simps voters_ℰ.simps)
-    (* WIP---- : maybe unfold and finish with auto after rewriting with ren_eq[symmetric] *)
+  have ren_E: "alts_rename π E = (π ` B, V, rel_rename π ∘ p)"
+    unfolding E_eq
+    by simp
+  show ?thesis
+    unfolding ren_E elections_𝒜.simps
+    using wf' img_B fin_V def_prof'
+    by simp (* alt: by auto *)
 qed
 
 subsection ‹Vote Counts and Fractions under Renaming›

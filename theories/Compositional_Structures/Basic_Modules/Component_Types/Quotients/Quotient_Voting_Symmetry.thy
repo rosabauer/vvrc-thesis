@@ -67,7 +67,7 @@ proof -
     fix x :: "'a"
     show "(π ∘ the_inv π) x = id x"
       using bij_π f_the_inv_into_f_bij_betw
-      by fastforce (* alt: by (metis UNIV_I comp_apply id_apply) *)
+      by fastforce 
   qed
 qed
 
@@ -79,8 +79,9 @@ lemma alt_stabilizer_the_inv_closed:
   shows "the_inv π ∈ alt_stabilizer A"
 proof -
   have bij_π: "bij π" and img_A: "π ` A = A"
-    using assms alt_stabilizer_rewrite
-    by blast+
+    using assms
+    unfolding alt_stabilizer_rewrite
+    by simp_all
   have "bij (the_inv π)"
     using bij_π bij_betw_the_inv_into
     by blast
@@ -114,8 +115,9 @@ lemma stabilizer_preserves_elections_𝒜:
   shows "alts_rename π E ∈ elections_𝒜 A"
 proof -
   have bij_π: "bij π" and img_A: "π ` A = A"
-    using stab alt_stabilizer_rewrite
-    by blast+
+    using assms
+    unfolding alt_stabilizer_rewrite
+    by simp_all
   obtain B :: "'a set" and V :: "'v set" and p :: "('a, 'v) Profile" where
     E_eq: "E = (B, V, p)"
     using prod_cases3

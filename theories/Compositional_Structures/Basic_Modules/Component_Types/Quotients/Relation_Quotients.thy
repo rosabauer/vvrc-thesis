@@ -349,7 +349,6 @@ proof -
     hence img_x_in_s: "φ g x ∈ s"
       using equiv_type[OF equiv_rel]
       by blast
-    ─ ‹Uses ‹equiv_type›: ‹equiv s r› entails ‹r ⊆ s × s›.›
     have img_cls: "r `` {φ g x} ∈ s // r"
       by (rule quotientI[OF img_x_in_s])
     have eq_1: "π⇩𝒬 f (φ g ` X) = f (φ g x)"

@@ -6,7 +6,6 @@ section ‹Symmetry Properties of Quotient Distance-Rationalized Rules›
 
 theory Quotient_Distance_Rationalization_Symmetry
   imports  Quotient_Distance_Rationalization
-  "Quotients/Quotient_Voting_Symmetry"
 begin
 
 text ‹
@@ -44,12 +43,12 @@ proof -
   have win: "∀ E E'. (E, E') ∈ r ⟶ fun⇩ℰ (ℛ⇩𝒲 d C) E = fun⇩ℰ (ℛ⇩𝒲 d C) E'"
     using invar_winners
     unfolding is_symmetry.simps
-    by blast (* alt: by fastforce *)
+    by blast 
   have res: "∀ E E'. (E, E') ∈ r ⟶
       limit (alternatives_ℰ E) UNIV = limit (alternatives_ℰ E') UNIV"
     using invar_res
     unfolding is_symmetry.simps
-    by blast (* alt: by fastforce *)
+    by blast 
   have "∀ E E'. (E, E') ∈ r ⟶
       fun⇩ℰ (distance_ℛ d C) E = fun⇩ℰ (distance_ℛ d C) E'"
   proof (intro allI impI)
@@ -147,7 +146,7 @@ proof -
         = ψ g (π⇩𝒬 (fun⇩ℰ (distance_ℛ d C)) B)"
       using lifted g_in_T cls_B
       unfolding rewrite_equivariance set_action.simps
-      by blast (* WIP *)
+      by blast 
     have bridge_img: "π⇩𝒬 (fun⇩ℰ (distance_ℛ d C)) (φ g ` B)
         = distance_ℛ⇩𝒬 r d C (φ g ` B)"
       by (rule bspec[OF bridge img_cls])
@@ -162,126 +161,5 @@ proof -
               set_action.simps
     by blast
 qed
-
-(*  INSERT into: Quotient_Distance_Rationalization_Symmetry.thy
-
-    EDIT 1 (header): change the imports line to
-
-      imports Quotient_Distance_Rationalization
-              "Quotients/Quotient_Voting_Symmetry"
-
-    EDIT 2: paste everything below directly before the final `end`.
-
-    NOTE (unverified): written without a running Isabelle; fallback
-    methods are marked (* alt: ... *).
-*)
-
-subsection ‹Neutrality Lifts to the Quotient Rule›
-
-text ‹
-  [NEUTR_Q]: If the winner set of a distance-rationalized rule does not
-  distinguish elections with the same vote fractions, and the rule is
-  neutral on all well-formed elections, then the quotient rule over A is
-  neutral in the quotient sense: renaming the alternatives within A moves
-  each class to another class, and the winners of the moved class are the
-  renamed winners of the original class. The proof only plugs the already
-  proven stabilizer facts into the generic lifting theorem.
-›
-
-theorem (in result_properties) neutr_dr_imp_neutr_quotient_dr:
-  fixes
-    d :: "('a, 'v) Election Distance" and
-    C :: "('a, 'v, 'b Result) Consensus_Class" and
-    A :: "'a set"
-  assumes
-    simple: "simple_on (elections_𝒦 C)
-        (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) (elections_𝒜 A) d" and
-    closed_domain: "closed_restricted_rel
-        (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) (elections_𝒜 A)
-        (elections_𝒦 C)" and
-    invar_res: "is_symmetry (λ E :: ('a, 'v) Election.
-        limit (alternatives_ℰ E) UNIV)
-        (Invariance (anonymity_homogeneity⇩ℛ (elections_𝒜 A)))" and
-    invar_C: "is_symmetry (elect_r ∘ fun⇩ℰ (rule_𝒦 C))
-        (Invariance (Restr (anonymity_homogeneity⇩ℛ (elections_𝒜 A))
-            (elections_𝒦 C)))" and
-    invar_dr: "is_symmetry (fun⇩ℰ (ℛ⇩𝒲 d C))
-        (Invariance (anonymity_homogeneity⇩ℛ (elections_𝒜 A)))" and
-    cons_subset: "elections_𝒦 C ⊆ elections_𝒜 A" and
-    neutral: "neutrality_in well_formed_elections (distance_ℛ d C)"
-  shows "is_symmetry (distance_ℛ⇩𝒬 (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) d C)
-      (action_induced_equivariance (alt_stabilizer A)
-          (elections_𝒜 A // anonymity_homogeneity⇩ℛ (elections_𝒜 A))
-          (set_action (φ_neutral (elections_𝒜 A))) (result_action ψ))"
-  by (rule equivar_dr_simple_dist_imp_equivar_quotient_dr[OF simple
-        closed_domain invar_res invar_C invar_dr anon_hom_equiv cons_subset
-        neutrality_in_stabilizer[OF neutral]
-        φ_neutral_elections_𝒜_compat φ_neutral_elections_𝒜_invertible])
-
-subsection ‹Reversal Symmetry Lifts to the Quotient Rule›
-
-text ‹
-  [REV_Q]: The same statement for reversal symmetry of SCFs. Here the full two-element reversal group acts, since flipping
-  all ballots never moves the alternative set.
-›
-
-theorem rev_dr_imp_rev_quotient_dr:
-  fixes
-    d :: "('a, 'v) Election Distance" and
-    C :: "('a, 'v, 'a rel Result) Consensus_Class" and
-    A :: "'a set"
-  assumes
-    simple: "simple_on (elections_𝒦 C)
-        (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) (elections_𝒜 A) d" and
-    closed_domain: "closed_restricted_rel
-        (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) (elections_𝒜 A)
-        (elections_𝒦 C)" and
-    invar_res: "is_symmetry (λ E :: ('a, 'v) Election.
-        limit_𝒮𝒲ℱ (alternatives_ℰ E) UNIV)
-        (Invariance (anonymity_homogeneity⇩ℛ (elections_𝒜 A)))" and
-    invar_C: "is_symmetry (elect_r ∘ fun⇩ℰ (rule_𝒦 C))
-        (Invariance (Restr (anonymity_homogeneity⇩ℛ (elections_𝒜 A))
-            (elections_𝒦 C)))" and
-    invar_dr: "is_symmetry (fun⇩ℰ (𝒮𝒲ℱ_result.ℛ⇩𝒲 d C))
-        (Invariance (anonymity_homogeneity⇩ℛ (elections_𝒜 A)))" and
-    cons_subset: "elections_𝒦 C ⊆ elections_𝒜 A" and
-    rev_sym: "reversal_symmetry_in well_formed_elections
-        (𝒮𝒲ℱ_result.distance_ℛ d C)"
-  shows "is_symmetry
-      (𝒮𝒲ℱ_result.distance_ℛ⇩𝒬 (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) d C)
-      (action_induced_equivariance (carrier reversal⇩𝒢)
-          (elections_𝒜 A // anonymity_homogeneity⇩ℛ (elections_𝒜 A))
-          (set_action (φ_reverse (elections_𝒜 A))) (result_action ψ_reverse))"
-  by (rule 𝒮𝒲ℱ_result.equivar_dr_simple_dist_imp_equivar_quotient_dr[OF simple
-        closed_domain invar_res invar_C invar_dr anon_hom_equiv cons_subset
-        reversal_symmetry_in_elections_𝒜[OF rev_sym]
-        φ_reverse_elections_𝒜_compat φ_reverse_elections_𝒜_invertible])
-
-subsection ‹Anonymity Holds Trivially on the Quotient Rule›
-
-text ‹
-  [ANON'_Q]: Renaming voters does not move any anon-hom class, so every
-  quotient rule is unchanged under the induced voter-renaming action
-  (with no extra assumptions). Anonymity
-  and homogeneity are absorbed into the quotient. The symmetries that survive as genuine actions on the quotient are
-  those that permute vote fractions, like neutrality and reversal. For properties like consistency this is less clear.
-›
-
-corollary (in result) quotient_dr_anonymous:
-  fixes
-    d :: "('a, 'v) Election Distance" and
-    C :: "('a, 'v, 'r Result) Consensus_Class" and
-    A :: "'a set" and
-    π :: "'v ⇒ 'v" and
-    CLS :: "('a, 'v) Election set"
-  assumes
-    bij_π: "bij π" and
-    cls: "CLS ∈ elections_𝒜 A // anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-  shows "distance_ℛ⇩𝒬 (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) d C
-      (set_action (φ_anon (elections_𝒜 A)) π CLS)
-    = distance_ℛ⇩𝒬 (anonymity_homogeneity⇩ℛ (elections_𝒜 A)) d C CLS"
-  by (simp only: set_action.simps
-        anon_acts_trivially_on_quotient[OF bij_π cls])
-
 
 end

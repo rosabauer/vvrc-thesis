@@ -557,17 +557,17 @@ proof -
     by (simp only: rel_app_alts alt_E)
   have fin': "finite (voters_ℰ (rel_app g E))"
     using fin_E
-    by (simp add: rel_app_voters)
+    by (cases E) simp
   have def': "∀ v. v ∉ voters_ℰ (rel_app g E) ⟶ profile_ℰ (rel_app g E) v = {}"
   proof (intro allI impI)
     fix v :: "'v"
     assume "v ∉ voters_ℰ (rel_app g E)"
     hence "profile_ℰ E v = {}"
       using def_E
-      by (simp add: rel_app_voters)
+      by (cases E) simp
     thus "profile_ℰ (rel_app g E) v = {}"
       using reversal_carrier_empty[OF g_in]
-      by (simp add: rel_app_profile)
+      by (cases E) simp
   qed
   show ?thesis
     unfolding elections_𝒜.simps
@@ -663,7 +663,7 @@ proof (intro ballI allI impI)
   moreover have
     "finite (voters_ℰ (rel_app g E)) = finite (voters_ℰ (rel_app g E'))"
     using fin_eq
-    by (simp add: rel_app_voters)
+    by (cases E, cases E') simp
   ultimately show
     "(φ_reverse (elections_𝒜 A) g E, φ_reverse (elections_𝒜 A) g E')
         ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
@@ -893,18 +893,18 @@ proof -
       by simp (* alt: by auto *)
   qed
   have inj_on_votes: "inj_on π {v ∈ V. p v = q}"
-    using inj_π subset_UNIV subset_inj_on
+    using inj_π subset_UNIV inj_on_subset
     by metis
   have "vote_count q (rename π E) = card {v ∈ π ` V. (p ∘ the_inv π) v = q}"
     unfolding E_eq
-    by (simp only: vote_count.simps rename.simps voters_ℰ.simps
-          profile_ℰ.simps)
+    by simp
   also have "… = card (π ` {v ∈ V. p v = q})"
     by (simp only: set_eq)
   also have "… = card {v ∈ V. p v = q}"
     by (rule card_image[OF inj_on_votes])
   also have "… = vote_count q E"
-    by (simp only: E_eq vote_count.simps voters_ℰ.simps profile_ℰ.simps)
+    unfolding E_eq
+    by simp
   finally show ?thesis .
 qed
 
@@ -916,24 +916,22 @@ lemma vote_fraction_rename:
   assumes bij_π: "bij π"
   shows "vote_fraction q (rename π E) = vote_fraction q E"
 proof -
-  obtain B :: "'a set" and V :: "'v set" and p :: "('a, 'v) Profile" where
-    E_eq: "E = (B, V, p)"
-    using prod_cases3
-    by blast
-  have inj_V: "inj_on π V"
-    using bij_π bij_is_inj subset_UNIV subset_inj_on
-    by metis
-  have vtrs: "voters_ℰ (rename π (B, V, p)) = π ` V"
-    by simp
-  have fin_iff: "finite (π ` V) = finite V"
+  have inj_V: "inj_on π (voters_ℰ E)"
+    by (rule inj_on_subset[OF bij_is_inj[OF bij_π] subset_UNIV])
+  have vtrs: "voters_ℰ (rename π E) = π ` voters_ℰ E"
+    by (cases E) simp
+  have fin_eq: "finite (voters_ℰ (rename π E)) = finite (voters_ℰ E)"
+    unfolding vtrs
     by (rule finite_image_iff[OF inj_V])
-  have card_eq: "card (π ` V) = card V"
+  have emp_eq: "(voters_ℰ (rename π E) = {}) = (voters_ℰ E = {})"
+    unfolding vtrs
+    by (rule image_is_empty)
+  have card_eq: "card (voters_ℰ (rename π E)) = card (voters_ℰ E)"
+    unfolding vtrs
     by (rule card_image[OF inj_V])
   show ?thesis
-    unfolding E_eq
-    by (simp only: vote_fraction.simps vtrs vote_count_rename[OF bij_π]
-          card_eq fin_iff image_is_empty voters_ℰ.simps)
-    (* alt: by (simp add: vote_count_rename[OF bij_π] card_eq fin_iff) *)
+    by (simp only: vote_fraction.simps fin_eq emp_eq card_eq
+          vote_count_rename[OF bij_π])
 qed
 
 text ‹
@@ -957,7 +955,7 @@ proof -
     using vote_fraction_rename[OF bij_π]
     by metis
   have inj_V: "inj_on π (voters_ℰ E)"
-    using bij_π bij_is_inj subset_UNIV subset_inj_on
+    using bij_π bij_is_inj subset_UNIV inj_on_subset
     by metis
   have "voters_ℰ (rename π E) = π ` voters_ℰ E"
     by (cases E) simp
@@ -990,6 +988,10 @@ proof -
   let ?r = "anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
   have equiv_r: "equiv ?X ?r"
     by (rule anon_hom_equiv)
+  have trans_r: "Relation.trans ?r"
+    using equiv_r
+    unfolding equiv_def
+    by blast
   obtain x :: "('a, 'v) Election" where
     CLS_eq: "CLS = ?r `` {x}" and
     x_in: "x ∈ ?X"
@@ -1019,12 +1021,10 @@ proof -
       unfolding w_ren
       by (rule anon_rename_in_own_class[OF bij_π E_in_X])
     ultimately have "(x, w) ∈ ?r"
-      using equiv_r
-      unfolding equiv_def trans_def
-      by blast
+       by (rule transD[OF trans_r])
     thus "w ∈ CLS"
       unfolding CLS_eq
-      by blast
+      by (simp only: Image_singleton_iff)
   next
     fix w :: "('a, 'v) Election"
     assume w_CLS: "w ∈ CLS"
@@ -1042,9 +1042,7 @@ proof -
     have "(w, rename (the_inv π) w) ∈ ?r"
       by (rule anon_rename_in_own_class[OF bij_σ w_X])
     hence "(x, rename (the_inv π) w) ∈ ?r"
-      using x_w equiv_r
-      unfolding equiv_def trans_def
-      by blast
+      by (rule transD[OF trans_r x_w])
     hence u_CLS: "rename (the_inv π) w ∈ CLS"
       unfolding CLS_eq
       by blast
@@ -1058,11 +1056,10 @@ proof -
     moreover have "φ_anon ?X π (rename (the_inv π) w)
         = rename π (rename (the_inv π) w)"
       by (rule φ_anon_apply[OF u_X])
-    ultimately have "φ_anon ?X π (rename (the_inv π) w) = w"
+    ultimately have "w = φ_anon ?X π (rename (the_inv π) w)"
       by simp
     thus "w ∈ φ_anon ?X π ` CLS"
-      using u_CLS
-      by force (* alt: by (metis imageI) *)
+      by (rule image_eqI[OF _ u_CLS])
   qed
 qed
 

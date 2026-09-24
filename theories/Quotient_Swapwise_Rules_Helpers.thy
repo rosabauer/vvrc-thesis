@@ -11,9 +11,11 @@ begin
 
 text \<open>
   We define a variant of strong unanimity that fixes the alternative set and
-  requires empty ballots for all voters outside the voter set. This makes it
+  deamnds that ballots outside of the voter set are simply empty. This makes it
   easier to prove that the assumptions of the invar_dr lemmas hold for rules
-  with a distance-rationalization set.
+  with a DR set. Specifically, this restriction aligns with the definition of elections_A A which
+  demands that an election with a unique profile leaves all ballots of non-voters empty.
+
   TBD: We prove later that this restriction does not change the minimum
   distance to the consensus class, so it is interchangeable with the
   unrestricted strong unanimity.
@@ -24,16 +26,6 @@ definition strong_unanimity_in :: "'a set \<Rightarrow> ('a, 'v :: wellorder, 'a
     (\<lambda> E. strong_unanimity\<^sub>\<C> E \<and> alternatives_\<E> E = A
     \<and> (\<forall> v. v \<notin> voters_\<E> E \<longrightarrow> profile_\<E> E v = {}))
     elect_first_module"
-
-
-lemma swap_l_one_simple:
-  fixes A :: "'a set"
-  assumes "finite A"
-  shows "simple
-           (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))
-           (elections_\<A> A)
-           (votewise_distance swap l_one :: ('a, 'v :: linorder) Election Distance)"
-  sorry
 
 
 lemma (in result) limit_invar_anon_hom:
@@ -68,11 +60,6 @@ lemma strong_unanimity_elections_subset:
   apply (auto simp add: well_formed_elections_def strong_unanimity_in_def)
   done
 
-text \<open>
-  Consensus membership with a fixed winner transfers along the
-  anonymity-homogeneity relation. This is the strong form of the closedness
-  lemma below, which forgets the winner.
-\<close>
 
 text \<open>
   Consensus membership with a fixed winner transfers along the
@@ -394,8 +381,10 @@ subsection \<open> Simple lemma \<close>
 text \<open>
   The votewise swap distance from a profile to a unanimous consensus profile
   equals the sum, over all cast ballots, of the number of voters who cast that
-  ballot times the swap distance of that ballot to the consensus ballot.
+  ballot times the swap distance of that ballot to the consensus ballot. Connects vote count
+  and cardinality to the different type of the votewise swap distance.
 \<close>
+
 lemma swap_dist_counting_formula:
   fixes
     A :: "'a set" and
@@ -1220,8 +1209,10 @@ proof (rule bexI[OF _ a_in], intro ballI)
     obtain A\<^sub>0 V\<^sub>0 p\<^sub>0 where b0_eq: "b\<^sub>0 = (A\<^sub>0, V\<^sub>0, p\<^sub>0)"
       using prod_cases3 by blast
 
+    (* Obtain the element that creates the quotient class: b0. *)
     from b0_Y obtain w where b0_cons: "b\<^sub>0 \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
       unfolding elections_\<K>.simps by blast
+    (* b0 is a strong-unanimity election, so it has a common ballot R. *)
     have cond0: "strong_unanimity\<^sub>\<C> (A\<^sub>0, V\<^sub>0, p\<^sub>0) \<and> A\<^sub>0 = A
                   \<and> (\<forall> v. v\<notin>  V\<^sub>0 \<longrightarrow>  p\<^sub>0 v = {})" and
         fin0: "finite_profile V\<^sub>0 A\<^sub>0 p\<^sub>0"
@@ -1287,21 +1278,18 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
     case False
   \<comment> \<open>STEP 3 (main case): the one-sided Inf from ANY finite nonempty
           x over A collapses to x's score against R.\<close>
-        \<comment> \<open>(i) lower bound via the collapse lemma:
-            BC \<subseteq> unanimity_class A R  (by BC_char; carrier gives
-            the empty-outside condition), hence
-            ?d x ` BC \<subseteq> ?d x ` unanimity_class A R, hence by
-            Inf_superset_mono and swap_dist_avg_collapse[OF x_fin x_ne]:
-            score \<le> Inf (?d x ` BC).
-            Conversion: {?d x b | b. b \<in> BC} = ?d x ` BC is
-            Setcompr_eq_image.\<close>
+        \<comment> \<open>(i) d x unanimity-election ≤ d x b - by case distinction:
+        If the voter set of b differs from x: d x b is infty. Hence it trivially holds.
+        If the voter sets are the same: Empty ballots of non-voters + unanimity force the two elections
+        to be the same.
+         \<close>
         \<comment> \<open>(ii) attainment: bx := (A, V x, \<lambda> v. if v \<in> V x then R else {})
             lies in BC: it is related to b0 because both are in the
             carrier and both have fraction profile (indicator of R),
             by unanimity_vote_fraction on each side.
             Its distance from x is the score, by
             swap_dist_avg_to_unanimity.\<close>
-        \<comment> \<open>(iii) Inf_lower + antisym (or by order), as in the
+        \<comment> \<open>(iii) Inf_lower + antisym (or by order), like in the
             collapse lemma's step F.\<close>
   have one_sided:
         "Inf {?d (A, V\<^sub>x, p\<^sub>x) b | b. b \<in> BC}

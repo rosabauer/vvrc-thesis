@@ -110,6 +110,18 @@ session Verified_Voting_Rule_Construction = HOL +
     "Sequential_Majority_Comparison"
     "Kemeny_Rule"
 
+    (* "Quotient Rules" *)
+    ...Quotients/Election_Quotients"
+    ...Quotients/Quotient_Voting_Symmetry" 
+  (* "Component Types" *)
+    ...Quotient_Distance_Rationalization"
+    ...Quotient_Distance_Rationalization_Symmetry"
+  (* "Voting Rules" *)
+    "Kemeny_Rule"
+  (* "Quotient Voting Rules" (thesis, R. Bauer) *)
+    "Quotient_Swapwise_Rules_Helpers"
+    "Quotient_Kemeny_Rule"
+
   document_files
     "root.tex"
     "settings.tex"

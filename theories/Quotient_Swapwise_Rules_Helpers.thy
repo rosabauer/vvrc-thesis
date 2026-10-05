@@ -5,14 +5,10 @@
 section \<open>Quotient Reasoning for the Normalized Swap Distance\<close>
 
 theory Quotient_Swapwise_Rules_Helpers
-  imports "Compositional_Structures/Basic_Modules/Component_Types/Quotient_Distance_Rationalization"
+  imports
+    "Compositional_Structures/Basic_Modules/Component_Types/Quotient_Distance_Rationalization"
     "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance_Rationalization"
     "Compositional_Structures/Basic_Modules/Component_Types/Quotients/Election_Quotients"
-    "Compositional_Structures/Basic_Modules/Component_Types/Consensus"
-    "Compositional_Structures/Basic_Modules/Elect_First_Module"
-    "Kemeny_Rule"
-    "Compositional_Structures/Basic_Modules/Component_Types/Consensus_Class"
-
 begin
 
 text \<open>

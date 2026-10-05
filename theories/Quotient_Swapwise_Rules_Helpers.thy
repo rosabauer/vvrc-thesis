@@ -246,7 +246,7 @@ proof (unfold is_symmetry.simps, intro allI impI)
     by simp
 qed
 
-subsection \<open> Simple lemma \<close>
+subsection \<open>The Normalized Swap Distance to Unanimity Elections\<close>
 
 text \<open>
   The votewise swap distance from a profile to a unanimous consensus profile
@@ -815,7 +815,7 @@ proof -
     by simp
 qed
 
-subsection \<open> P1: simplicity of the normalized swap distance \<close>
+subsection \<open>Simplicity of the Normalized Swap Distance\<close>
 
 text \<open>
   The vote fractions of a unanimity election form the indicator of its
@@ -1347,7 +1347,7 @@ next
 qed
 qed
 
-subsection \<open> P5: invariance of the distance-rationalized winners \<close>
+subsection \<open>Invariance of the Distance-Rationalized Winners\<close>
 
 text \<open>
   Score invariance, one-sided: whatever consensus election b the infimum for E

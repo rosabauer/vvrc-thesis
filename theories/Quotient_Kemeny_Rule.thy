@@ -26,7 +26,7 @@ fun kemeny_rule⇩𝒬 :: "'a set ⇒ ('a, 'v :: wellorder) Election set ⇒ 'a 
         (votewise_distance swap l_one_avg)
         (strong_unanimity_in A) E⇩𝒬"
 
-subsection ‹Invariance of the Winners (P5)›
+subsection ‹Invariance of the Winners›
 
 lemma swap_dr_invar_anon_hom:
   fixes A :: "'a set"

@@ -1195,11 +1195,6 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
         have unan_bx: "\<forall> v \<in> V\<^sub>x.
               (if v \<in> V\<^sub>x then R else ({} :: 'a Preference_Relation)) = R"
           by simp
-
-        have unan_bx: "\<forall> v \<in> V\<^sub>x.
-              (if v \<in> V\<^sub>x then R else ({} :: 'a Preference_Relation)) = R"
-          by simp
-
         have prof0: "profile V\<^sub>0 A p\<^sub>0"
           using b0_carrier b0_alts
           unfolding b0_eq elections_\<A>.simps well_formed_elections_def

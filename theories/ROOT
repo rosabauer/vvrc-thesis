@@ -59,6 +59,7 @@ session Verified_Voting_Rule_Construction = HOL +
   (* "Quotient Rules" *)
     "Compositional_Structures/Basic_Modules/Component_Types/Quotients/Relation_Quotients"
     "Compositional_Structures/Basic_Modules/Component_Types/Quotients/Election_Quotients"
+    "Compositional_Structures/Basic_Modules/Component_Types/Quotients/Quotient_Voting_Symmetry"
   (* "Component Types" *)
     "Compositional_Structures/Basic_Modules/Component_Types/Distance"
     "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance"
@@ -76,6 +77,7 @@ session Verified_Voting_Rule_Construction = HOL +
     "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance_Rationalization"
     "Compositional_Structures/Basic_Modules/Component_Types/Distance_Rationalization_Symmetry"
     "Compositional_Structures/Basic_Modules/Component_Types/Quotient_Distance_Rationalization"
+    "Compositional_Structures/Basic_Modules/Component_Types/Quotient_Distance_Rationalization_Symmetry"
     "Compositional_Structures/Basic_Modules/Component_Types/Interpretation_Code"
   (* "Basic Modules" *)
     "Compositional_Structures/Basic_Modules/Defer_Module"
@@ -108,15 +110,6 @@ session Verified_Voting_Rule_Construction = HOL +
     "Classic_Nanson_Rule"
     "Schwartz_Rule"
     "Sequential_Majority_Comparison"
-    "Kemeny_Rule"
-
-    (* "Quotient Rules" *)
-    ...Quotients/Election_Quotients"
-    ...Quotients/Quotient_Voting_Symmetry" 
-  (* "Component Types" *)
-    ...Quotient_Distance_Rationalization"
-    ...Quotient_Distance_Rationalization_Symmetry"
-  (* "Voting Rules" *)
     "Kemeny_Rule"
   (* "Quotient Voting Rules" (thesis, R. Bauer) *)
     "Quotient_Swapwise_Rules_Helpers"

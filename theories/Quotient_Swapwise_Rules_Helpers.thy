@@ -56,9 +56,8 @@ qed
 
 lemma strong_unanimity_elections_subset:
   fixes A :: "'a set"
-  shows "elections_\<K> (strong_unanimity_in A)  \<subseteq> elections_\<A> A"
-  apply (auto simp add: well_formed_elections_def strong_unanimity_in_def)
-  done
+  shows "elections_\<K> (strong_unanimity_in A) \<subseteq> elections_\<A> A"
+  by (auto simp add: well_formed_elections_def strong_unanimity_in_def)
 
 
 text \<open>

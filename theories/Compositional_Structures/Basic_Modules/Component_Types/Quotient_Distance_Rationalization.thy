@@ -52,8 +52,18 @@ fun simple :: "'x rel \<Rightarrow> 'x set \<Rightarrow> 'x Distance \<Rightarro
       \<exists> a \<in> A. \<forall> B \<in> X // r.
         distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B})"
 
+text \<open>
+  \<open>simple_on Y r X d\<close> weakens \<open>simple r X d\<close> by requiring the condition only
+  for the classes \<open>B\<close> of a subset \<open>Y\<close> of \<open>X\<close>. In the quotient distance
+  rationalization below, \<open>Y\<close> is the set of consensus elections, which are the
+  only classes whose distance to \<open>A\<close> enters the rule. The two theorems
+  \<open>invar_dr_simple_dist_imp_quotient_dr_winners\<close> and
+  \<open>invar_dr_simple_dist_imp_quotient_dr\<close> are stated with this weaker premise;
+  \<open>simple_imp_simple_on\<close> recovers it from the original notion.
+\<close>
+
 fun simple_on :: "'x set \<Rightarrow> 'x rel \<Rightarrow> 'x set \<Rightarrow> 'x Distance \<Rightarrow> bool" where
-  "simple_on Y  r X d =
+  "simple_on Y r X d =
     (\<forall> A \<in> X // r.
       \<exists> a \<in> A. \<forall> B \<in> Y // r.
         distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B})"
@@ -754,6 +764,11 @@ proof -
     using le
     by simp
 qed
+
+text \<open>
+  A distance that is simple on all of \<open>X\<close> is in particular simple on every
+  subset \<open>Y\<close> of \<open>X\<close>.
+\<close>
 
 lemma simple_imp_simple_on:
   fixes

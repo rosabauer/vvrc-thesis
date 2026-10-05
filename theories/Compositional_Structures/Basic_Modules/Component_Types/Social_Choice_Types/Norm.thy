@@ -107,8 +107,15 @@ subsection \<open>Common Norms\<close>
 fun l_one :: "Norm" where
   "l_one x = (\<Sum> i < length x. \<bar>x!i\<bar>)"
 
+text \<open>
+  The averaged variant of \<open>l_one\<close> divides by the length of the vector.
+  Used for votewise distances, it scales the distance by the number of voters,
+  following the normalized votewise distances of Hadjibeyli and Wilson, which
+  do not grow when an electorate is copied.
+\<close>
+
 fun l_one_avg :: "Norm" where
- "l_one_avg x = (if x = [] then 0 else l_one x / ereal (real (length x)))"
+  "l_one_avg x = (if x = [] then 0 else l_one x / ereal (real (length x)))"
 
 subsection \<open>Properties\<close>
 

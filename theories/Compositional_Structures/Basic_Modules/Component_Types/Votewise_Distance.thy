@@ -508,10 +508,23 @@ proof (unfold distance_neutrality.simps rewrite_invariance\<^sub>\<D>, safe)
   qed
 qed
 
+text \<open>
+  On a finite, nonempty voter set, the votewise distance with the averaged norm
+  \<open>l_one_avg\<close> is the votewise distance with \<open>l_one\<close> divided by the
+  number of voters.
+\<close>
+
 lemma dist_avg_norm_eq_normalized_dist:
-  assumes "finite V" and "V \<noteq> {}"
-  shows "votewise_distance d l_one_avg (A,V,p) (A',V,p') =
-  votewise_distance d l_one (A,V,p) (A',V,p')/ ereal( real ( card V))"
+  fixes
+    d :: "'a Vote Distance" and
+    A A' :: "'a set" and
+    V :: "'v :: linorder set" and
+    p p' :: "('a, 'v) Profile"
+  assumes
+    "finite V" and
+    "V \<noteq> {}"
+  shows "votewise_distance d l_one_avg (A, V, p) (A', V, p') =
+          votewise_distance d l_one (A, V, p) (A', V, p') / ereal (real (card V))"
   by (simp add: card_gt_0_iff)
 
 end

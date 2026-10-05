@@ -746,6 +746,11 @@ definition vote_simplex :: "(rat^'b) set" where
 
 subsubsection \<open>Auxiliary Lemmas\<close>
 
+text \<open>
+  On the elections over a fixed alternative set, all voter sets are finite, so
+  the anonymity-homogeneity relation is an equivalence relation there.
+\<close>
+
 lemma anon_hom_equiv:
   fixes A :: "'a set"
   shows "equiv (elections_\<A> A) (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))"

@@ -58,9 +58,6 @@ fun simple_on :: "'x set \<Rightarrow> 'x rel \<Rightarrow> 'x set \<Rightarrow>
       \<exists> a \<in> A. \<forall> B \<in> Y // r.
         distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B})"
 
-abbreviation consensus_simple where
- "consensus_simple C r X d \<equiv> simple_on (elections_\<K> C) r X d"
-
 fun product' :: "'x rel \<Rightarrow> ('x * 'x) rel" where
   "product' r = {(p\<^sub>1, p\<^sub>2). ((fst p\<^sub>1, fst p\<^sub>2) \<in> r \<and> snd p\<^sub>1 = snd p\<^sub>2)
                           \<or> ((snd p\<^sub>1, snd p\<^sub>2) \<in> r \<and> fst p\<^sub>1 = fst p\<^sub>2)}"
@@ -757,11 +754,6 @@ proof -
     using le
     by simp
 qed
-
-lemma simple_on_full_eq_simple:   (* new def at full strength  = old *)
-  "simple_on X r X d = simple r X d"
-  by auto
-
 
 lemma simple_imp_simple_on:
   fixes

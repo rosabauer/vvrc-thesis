@@ -1,6 +1,7 @@
 (*  File:  theories/Compositional_Structures/Basic_Modules/Component_Types/
            Quotient_Distance_Rationalization_Symmetry.thy
 *)
+\<^marker>‹creator "Rosa Bauer, LMU Munich"›
 
 section ‹Symmetry Properties of Quotient Distance-Rationalized Rules›
 

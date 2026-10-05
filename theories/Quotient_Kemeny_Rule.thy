@@ -1,3 +1,7 @@
+(*  File:       Quotient_Kemeny_Rule.thy
+*)
+\<^marker>‹creator "Rosa Bauer, LMU Munich"›
+
 section ‹Quotient Kemeny Rule›
 
 theory Quotient_Kemeny_Rule

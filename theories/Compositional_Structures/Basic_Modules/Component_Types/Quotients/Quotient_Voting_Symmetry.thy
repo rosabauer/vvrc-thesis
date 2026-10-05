@@ -1,6 +1,7 @@
 (*  File:  theories/Compositional_Structures/Basic_Modules/Component_Types/
            Quotients/Quotient_Voting_Symmetry.thy
 *)
+\<^marker>‹creator "Rosa Bauer, LMU Munich"›
 
 section ‹Symmetry of Quotient Voting Rules›
 
@@ -8,6 +9,21 @@ theory Quotient_Voting_Symmetry
   imports Election_Quotients
           "../Electoral_Module"
 begin
+
+text ‹
+  This theory transfers the symmetry properties of electoral modules from
+  well-formed elections to the quotient of the elections over a fixed
+  alternative set ‹A› under the anonymity-homogeneity relation. For
+  neutrality and reversal symmetry it establishes the premises of
+  ‹pass_to_quotient_equivar'›: the transformations are compatible with the
+  relation, they are invertible on ‹elections_𝒜 A›, and the property on
+  well-formed elections restricts to an equivariance on ‹elections_𝒜 A›.
+  For neutrality, the transformations have to be restricted to the
+  stabilizer of ‹A›, since only those keep the alternative set fixed; the
+  main result is ‹neutrality_lifts_to_anon_hom_quotient›. Voter renamings
+  act trivially on the quotient (‹anon_acts_trivially_on_quotient›), so
+  anonymity is built into the quotient rather than being a symmetry of it.
+›
 
 subsection ‹The Alternative-Set Stabilizer›
 

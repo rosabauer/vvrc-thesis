@@ -1,3 +1,9 @@
+(*  File:       Quotient_Swapwise_Rules_Helpers.thy
+*)
+\<^marker>\<open>creator "Rosa Bauer, LMU Munich"\<close>
+
+section \<open>Quotient Reasoning for the Normalized Swap Distance\<close>
+
 theory Quotient_Swapwise_Rules_Helpers
   imports "Compositional_Structures/Basic_Modules/Component_Types/Quotient_Distance_Rationalization"
     "Compositional_Structures/Basic_Modules/Component_Types/Votewise_Distance_Rationalization"
@@ -10,8 +16,25 @@ theory Quotient_Swapwise_Rules_Helpers
 begin
 
 text \<open>
+  This theory provides the ingredients for instantiating the quotient distance
+  rationalization of \<open>Quotient_Distance_Rationalization\<close> with the normalized
+  swap distance \<open>votewise_distance swap l_one_avg\<close> and the strong unanimity
+  consensus on a fixed alternative set \<open>A\<close>, with respect to the
+  anonymity-homogeneity relation on \<open>elections_\<A> A\<close>. The main results are
+  \<open>swap_l_one_avg_simple\<close> (the distance is simple on the consensus classes),
+  \<open>strong_unanimity_in_closed_under_anon_hom\<close> and
+  \<open>strong_unanimity_in_invar_anon_hom\<close> (the consensus class is closed under the
+  relation and its rule is invariant on it), and \<open>swap_score_invar_anon_hom\<close>
+  together with \<open>anon_hom_score_invar_imp_invar_dr\<close> (the scores and hence the
+  distance-rationalized winners are invariant). They are combined in
+  \<open>Quotient_Kemeny_Rule\<close>.
+\<close>
+
+subsection \<open>Strong Unanimity on a Fixed Alternative Set\<close>
+
+text \<open>
   We define a variant of strong unanimity that fixes the alternative set and
-  deamnds that ballots outside of the voter set are simply empty. This makes it
+  demands that ballots outside of the voter set are simply empty. This makes it
   easier to prove that the assumptions of the invar_dr lemmas hold for rules
   with a DR set. Specifically, this restriction aligns with the definition of elections_A A which
   demands that an election with a unique profile leaves all ballots of non-voters empty.

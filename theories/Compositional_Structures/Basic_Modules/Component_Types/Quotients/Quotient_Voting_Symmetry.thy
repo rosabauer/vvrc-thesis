@@ -151,7 +151,7 @@ proof -
   show ?thesis
     unfolding ren_E elections_𝒜.simps
     using wf' img_B fin_V def_prof'
-    by simp (* alt: by auto *)
+    by simp
 qed
 
 subsection ‹Vote Counts and Fractions under Renaming›
@@ -404,7 +404,7 @@ proof -
     by auto
   ultimately show ?thesis
     using equivar_ind_by_act_coincide
-    by blast (* alt: by metis *)
+    by blast
 qed
 
 subsection ‹Theorem: Neutrality Lifts to the Quotient›
@@ -436,10 +436,6 @@ theorem (in result_properties) neutrality_lifts_to_anon_hom_quotient:
           neutrality_in_stabilizer[OF neutral_m]
           φ_neutral_elections_𝒜_compat
           φ_neutral_elections_𝒜_invertible] .
-
-
-(*  NOTE WIP
-*)
 
 subsection ‹Auxiliary Lemmas on Ballot Reversal›
 
@@ -754,7 +750,7 @@ proof -
     by auto
   ultimately show ?thesis
     using equivar_ind_by_act_coincide
-    by blast (* alt: by metis *)
+    by blast
 qed
 
 subsection ‹Anonymity Acts Trivially on the Quotient›
@@ -793,14 +789,14 @@ proof -
   have prof: "profile V B p"
     using wf
     unfolding well_formed_elections_def
-    by simp (* alt: by auto *)
+    by simp
   have ren_eq: "(B, π ` V, p ∘ the_inv π) = rename π (B, V, p)"
     by simp
   have "profile (π ` V) B (p ∘ the_inv π)"
     using rename_prof[OF prof ren_eq bij_π] .
   hence wf': "(B, π ` V, p ∘ the_inv π) ∈ well_formed_elections"
     unfolding well_formed_elections_def
-    by simp (* alt: by auto *)
+    by simp
   have fin': "finite (π ` V)"
     using fin_V
     by blast
@@ -830,7 +826,7 @@ proof -
   show ?thesis
     unfolding ren_E elections_𝒜.simps
     using wf' B_eq_A fin' def'
-    by auto (* alt: by simp *)
+    by auto
 qed
 
 lemma φ_anon_apply:
@@ -890,7 +886,7 @@ proof -
       by (rule the_inv_f_f[OF inj_π])
     thus "w ∈ {v ∈ π ` V. (p ∘ the_inv π) v = q}"
       using v_V p_q w_eq
-      by simp (* alt: by auto *)
+      by simp
   qed
   have inj_on_votes: "inj_on π {v ∈ V. p v = q}"
     using inj_π subset_UNIV inj_on_subset

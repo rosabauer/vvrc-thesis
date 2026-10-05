@@ -271,7 +271,7 @@ lemma swap_dist_counting_formula:
                             * card (pairwise_disagreements A r R))"
 proof -
 
-  \<comment> \<open>Unfold votewise_distance. Its guard holds since V is finite and non-epty\<close>
+  \<comment> \<open>Unfold votewise_distance. Its guard holds since V is finite and non-empty\<close>
   have unfold_vwd:
     "votewise_distance swap l_one (A, V, p) (A, V, \<lambda> v. R) =
        l_one (map2 (\<lambda> q q'. swap (A, q) (A, q'))
@@ -539,7 +539,7 @@ proof -
       thus "real (vote_count r (A, V, p))  * cost r * real ?n'
               = real (vote_count r (A, V', p')) * cost r * real ?n"
           by (metis mult.assoc mult.commute)
-    qed simp (* close remaining refl statement*)
+    qed simp
     also have "\<dots> = (\<Sum> r \<in> p ` V. real (vote_count r (A, V', p')) * cost r) * real ?n"
       by (simp add: sum_distrib_right)
     also have "\<dots> = (\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r) * real ?n"
@@ -818,10 +818,11 @@ qed
 
 subsection \<open> P1: simplicity of the normalized swap distance \<close>
 
-(* Helper A: a unanimity election's vote-fraction profile is the
-   indicator of its common ballot.
-   True branch: copy of the frac_E block in strong_unanimity_invar_anon_hom.
-   False branch: copy of the r_eq contradiction block there. *)
+text \<open>
+  The vote fractions of a unanimity election form the indicator of its
+  common ballot.
+\<close>
+
 lemma unanimity_vote_fraction:
   fixes
     A :: "'a set" and
@@ -855,9 +856,10 @@ next
     using False by (simp add: rat_number_collapse)
 qed
 
-(* Helper B: fraction one forces unanimity.
-   Both steps are copies from strong_unanimity_in_closed_under_anon_hom
-   (the V'_nonempty and all_vote' blocks). *)
+text \<open>
+  Conversely, a ballot with vote fraction one is cast by every voter.
+\<close>
+
 lemma vote_fraction_one_imp_unanimous:
   fixes
     A :: "'a set" and
@@ -886,12 +888,11 @@ proof -
 qed
 
 
-(* Helper C: the score doesn't care which unanimity-R partner it
-   measures against, as long as the voter set is its own.
-   This is same_V_dist + to_list_R from swap_dist_avg_collapse,
-   lifted out and generalized; the proof is the same three-step
-   calculation. Optional cleanup for item 10: make the collapse
-   lemma cite this instead of its local copy. *)
+text \<open>
+  The distance to a unanimity-R election on the same voter set does not
+  depend on the ballots of its non-voters.
+\<close>
+
 lemma swap_dist_avg_to_unanimity:
   fixes
     A :: "'a set" and
@@ -927,8 +928,9 @@ also have "\<dots> = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda>
 qed
 
 
-(* Helper D: emptiness transfers along the relation.
-   Extraction of empty_to / empty_from from swap_dist_avg_invar_anon_hom. *)
+text \<open>
+  Related elections have empty voter sets simultaneously.
+\<close>
 
 lemma anon_hom_empty_iff:
   fixes
@@ -1065,10 +1067,8 @@ proof (rule bexI[OF _ a_in], intro ballI)
     obtain A\<^sub>0 V\<^sub>0 p\<^sub>0 where b0_eq: "b\<^sub>0 = (A\<^sub>0, V\<^sub>0, p\<^sub>0)"
       using prod_cases3 by blast
 
-    (* Obtain the element that creates the quotient class: b0. *)
     from b0_Y obtain w where b0_cons: "b\<^sub>0 \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
       unfolding elections_\<K>.simps by blast
-    (* b0 is a strong-unanimity election, so it has a common ballot R. *)
     have cond0: "strong_unanimity\<^sub>\<C> (A\<^sub>0, V\<^sub>0, p\<^sub>0) \<and> A\<^sub>0 = A
                   \<and> (\<forall> v. v\<notin>  V\<^sub>0 \<longrightarrow>  p\<^sub>0 v = {})" and
         fin0: "finite_profile V\<^sub>0 A\<^sub>0 p\<^sub>0"
@@ -1132,21 +1132,8 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
   show "distance_infimum\<^sub>\<Q> ?d AC BC = Inf {?d a b | b. b \<in> BC}"
   proof (cases "V\<^sub>a = {}")
     case False
-  \<comment> \<open>STEP 3 (main case): the one-sided Inf from ANY finite nonempty
-          x over A collapses to x's score against R.\<close>
-        \<comment> \<open>(i) d x unanimity-election ≤ d x b - by case distinction:
-        If the voter set of b differs from x: d x b is infty. Hence it trivially holds.
-        If the voter sets are the same: Empty ballots of non-voters + unanimity force the two elections
-        to be the same.
-         \<close>
-        \<comment> \<open>(ii) attainment: bx := (A, V x, \<lambda> v. if v \<in> V x then R else {})
-            lies in BC: it is related to b0 because both are in the
-            carrier and both have fraction profile (indicator of R),
-            by unanimity_vote_fraction on each side.
-            Its distance from x is the score, by
-            swap_dist_avg_to_unanimity.\<close>
-        \<comment> \<open>(iii) Inf_lower + antisym (or by order), like in the
-            collapse lemma's step F.\<close>
+  \<comment> \<open>Main case: for a finite, nonempty voter set the infimum over BC is
+        attained at the unanimity-R election on that very voter set.\<close>
   have one_sided:
         "Inf {?d (A, V\<^sub>x, p\<^sub>x) b | b. b \<in> BC}
            = ?d (A, V\<^sub>x, p\<^sub>x) (A, V\<^sub>x, \<lambda> v. R)"
@@ -1212,7 +1199,7 @@ have b0_in_BC: "b\<^sub>0 \<in> BC"
         have "(b\<^sub>0, b\<^sub>x) \<in> ?r"
           using b0_carrier bx_X frac_bx
           unfolding b0_eq anonymity_homogeneity\<^sub>\<R>.simps
-          by fastforce (* unknown isues with blast here*)
+          by fastforce
         hence bx_BC: "b\<^sub>x \<in> BC"
           using BC_img by blast
         have dist_bx: "?d (A, V\<^sub>x, p\<^sub>x) b\<^sub>x

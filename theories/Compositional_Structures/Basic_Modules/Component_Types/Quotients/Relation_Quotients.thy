@@ -361,7 +361,7 @@ proof -
     hence eq_2: "f (φ g x) = ψ g (f x)"
       using equivar x_in_s
       unfolding action_induced_equivariance_def is_symmetry.simps
-      by fastforce (* alt: by fast *)
+      by fastforce
     have eq_3: "π⇩𝒬 f X = f x"
       by (rule bspec[OF bspec[OF pass_to_quotient[OF invar equiv_rel]
             cls_X] x_in_X])
@@ -433,14 +433,14 @@ proof (intro ballI)
       by blast
     hence "(x, φ h z) ∈ r"
       using inv_h x_in_s
-      by fastforce (* alt: by metis *)
+      by fastforce
     hence "φ h z ∈ r `` {x}"
       by blast
     moreover have "φ g (φ h z) = z"
       using inv_h z_in_s
       by blast
     ultimately show "z ∈ φ g ` (r `` {x})"
-      by force (* alt: by (metis imageI) *)
+      by force
   qed
 qed
 
@@ -461,10 +461,6 @@ corollary pass_to_quotient_equivar':
     equiv_rel: "equiv s r" and
     invar: "is_symmetry f (Invariance r)" and
     equivar: "is_symmetry f (action_induced_equivariance T s φ ψ)" and
-
-    (* Compatibility and Inversibility elegantly 
-    prove show that you can pull φ into the anon-hom relation. *)
-
     compat: "∀ g ∈ T. ∀ x y. (x, y) ∈ r ⟶ (φ g x, φ g y) ∈ r" and
     invs: "∀ g ∈ T. ∃ h ∈ T. ∀ x ∈ s. φ h (φ g x) = x ∧ φ g (φ h x) = x"
   shows "is_symmetry (π⇩𝒬 f)

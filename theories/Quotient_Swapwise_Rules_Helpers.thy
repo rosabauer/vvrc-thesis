@@ -472,9 +472,6 @@ proof -
     finally show ?thesis .
   qed
 
-  have raw_fin:  "?raw  \<noteq> \<infinity>" using step1  by simp
-  have raw'_fin: "?raw' \<noteq> \<infinity>" using step1' by simp
-
   \<comment> \<open>Step 2: l_one_avg is l_one divided by card V.\<close>
   have step2: "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
                  = ?raw / ereal (real ?n)"
@@ -483,12 +480,6 @@ proof -
                     (to_list V p) (to_list V (\<lambda> v. R))"
     have vwd_avg: "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R) = l_one_avg ?xs"
       using fin nonempty by simp
-    have vwd_raw: "?raw = l_one ?xs"
-      using fin nonempty by simp
-    have len_xs: "length ?xs = ?n"
-      using fin by simp
-    have ne_xs: "?xs \<noteq> []"
-      using len_xs n_pos fin by auto
     show ?thesis
       unfolding vwd_avg
       by (simp add: fin nonempty)
@@ -502,12 +493,6 @@ proof -
     have vwd_avg': "votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)
                       = l_one_avg ?xs'"
       using fin' nonempty' by simp
-    have vwd_raw': "?raw' = l_one ?xs'"
-      using fin' nonempty' by simp
-    have len_xs': "length ?xs' = ?n'"
-      using fin' by simp
-    have ne_xs': "?xs' \<noteq> []"
-      using len_xs' n'_pos fin' by auto
         show ?thesis
       unfolding vwd_avg'
       by (simp add: fin' nonempty')

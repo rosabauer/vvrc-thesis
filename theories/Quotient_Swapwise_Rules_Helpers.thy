@@ -78,6 +78,169 @@ lemma strong_unanimity_elections_subset:
   shows "elections_\<K> (strong_unanimity_in A) \<subseteq> elections_\<A> A"
   by (auto simp add: well_formed_elections_def strong_unanimity_in_def)
 
+text \<open>
+  Membership in a consensus class of \<open>strong_unanimity_in A\<close> unpacks to:
+  the alternative set is \<open>A\<close>, the finite, nonempty electorate unanimously
+  casts a ballot \<open>R\<close> that is empty for non-voters, and \<open>w\<close> is the unique
+  alternative ranked first by \<open>R\<close>. The next two lemmas state the two directions.
+\<close>
+
+lemma strong_unanimity_in_\<K>\<^sub>\<E>D:
+  fixes
+    A A' :: "'a set" and
+    V :: "'v :: wellorder set" and
+    p :: "('a, 'v) Profile" and
+    w :: "'a"
+  assumes "(A', V, p) \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
+  shows "A' = A \<and> A \<noteq> {} \<and> finite A \<and> finite V \<and> V \<noteq> {} \<and> profile V A p
+          \<and> (\<forall> v. v \<notin> V \<longrightarrow> p v = {})
+          \<and> (\<exists> R. (\<forall> v \<in> V. p v = R) \<and> {a \<in> A. above R a = {a}} = {w})"
+proof -
+  have cond: "strong_unanimity\<^sub>\<C> (A', V, p) \<and> A' = A \<and> (\<forall> v. v \<notin> V \<longrightarrow> p v = {})" and
+       fin: "finite_profile V A' p" and
+       elect: "elect (rule_\<K> (strong_unanimity_in A)) V A' p = {w}"
+    using assms
+    unfolding \<K>\<^sub>\<E>.simps strong_unanimity_in_def consensus_choice.simps
+    by (simp_all add: Let_def split: if_split_asm)
+  from cond obtain R where unan: "\<forall> v \<in> V. p v = R"
+    unfolding strong_unanimity\<^sub>\<C>.simps equal_vote\<^sub>\<C>.simps equal_vote\<^sub>\<C>'.simps
+    by blast
+  have alts: "A' = A" and A_ne: "A \<noteq> {}" and V_ne: "V \<noteq> {}"
+    using cond
+    unfolding strong_unanimity\<^sub>\<C>.simps nonempty_set\<^sub>\<C>.simps nonempty_profile\<^sub>\<C>.simps
+    by auto
+  have least_V: "least V \<in> V"
+    using V_ne LeastI_ex ex_in_conv
+    unfolding least.simps
+    by metis
+  have "{a \<in> A. above R a = {a}} = {a \<in> A'. above (p (least V)) a = {a}}"
+    using unan least_V alts
+    by simp
+  also have "\<dots> = elect (rule_\<K> (strong_unanimity_in A)) V A' p"
+    using cond
+    unfolding strong_unanimity_in_def consensus_choice.simps
+    by (simp add: Let_def)
+  also have "\<dots> = {w}"
+    by (rule elect)
+  finally have elect_R: "{a \<in> A. above R a = {a}} = {w}" .
+  show ?thesis
+    unfolding alts
+    using cond[unfolded alts] fin[unfolded alts] unan elect_R A_ne V_ne
+    by blast
+qed
+
+lemma strong_unanimity_in_\<K>\<^sub>\<E>I:
+  fixes
+    A :: "'a set" and
+    V :: "'v :: wellorder set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation" and
+    w :: "'a"
+  assumes
+    A_ne: "A \<noteq> {}" and
+    fin_A: "finite A" and
+    fin_V: "finite V" and
+    V_ne: "V \<noteq> {}" and
+    prof: "profile V A p" and
+    nonvoter: "\<forall> v. v \<notin> V \<longrightarrow> p v = {}" and
+    unan: "\<forall> v \<in> V. p v = R" and
+    elect_R: "{a \<in> A. above R a = {a}} = {w}"
+  shows "(A, V, p) \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
+proof -
+  have cond: "strong_unanimity\<^sub>\<C> (A, V, p) \<and> A = A \<and> (\<forall> v. v \<notin> V \<longrightarrow> p v = {})"
+    using A_ne V_ne unan nonvoter
+    unfolding strong_unanimity\<^sub>\<C>.simps nonempty_set\<^sub>\<C>.simps nonempty_profile\<^sub>\<C>.simps
+              equal_vote\<^sub>\<C>.simps equal_vote\<^sub>\<C>'.simps
+    by auto
+  have least_V: "least V \<in> V"
+    using V_ne LeastI_ex ex_in_conv
+    unfolding least.simps
+    by metis
+  have "elect (rule_\<K> (strong_unanimity_in A)) V A p = {a \<in> A. above (p (least V)) a = {a}}"
+    using cond
+    unfolding strong_unanimity_in_def consensus_choice.simps
+    by (simp add: Let_def)
+  also have "\<dots> = {a \<in> A. above R a = {a}}"
+    using unan least_V
+    by simp
+  finally have elect: "elect (rule_\<K> (strong_unanimity_in A)) V A p = {w}"
+    using elect_R
+    by simp
+  show ?thesis
+    using cond fin_A fin_V prof elect
+    unfolding \<K>\<^sub>\<E>.simps strong_unanimity_in_def consensus_choice.simps
+    by (simp add: Let_def)
+qed
+
+text \<open>
+  The vote fractions of a unanimity election form the indicator of its
+  common ballot.
+\<close>
+
+lemma unanimity_vote_fraction:
+  fixes
+    A :: "'a set" and
+    V :: "'v set" and
+    p :: "('a, 'v) Profile" and
+    R q :: "'a Preference_Relation"
+  assumes
+    fin: "finite V" and
+    ne: "V \<noteq> {}" and
+    unan: "\<forall> v \<in> V. p v = R"
+  shows "vote_fraction q (A, V, p) = (if q = R then 1 else 0)"
+proof (cases "q = R")
+  case True
+  have "{v \<in> V. p v = q} = V"
+    using unan True by blast
+  hence count: "vote_count q (A, V, p) = card V"
+    by simp
+  have "card V \<noteq> 0"
+    using fin ne by (simp add: card_eq_0_iff)
+  hence "Fract (int (card V)) (int (card V)) = 1"
+    by (simp add: Fract_of_int_quotient)
+  thus ?thesis
+    using count fin ne True by simp
+next
+  case False
+  hence "{v \<in> V. p v = q} = {}"
+    using unan by auto
+  hence "vote_count q (A, V, p) = 0"
+    by (simp add: card_eq_0_iff)
+  thus ?thesis
+    using False by (simp add: rat_number_collapse)
+qed
+
+text \<open>
+  Conversely, a ballot with vote fraction one is cast by every voter.
+\<close>
+
+lemma vote_fraction_one_imp_unanimous:
+  fixes
+    A :: "'a set" and
+    V :: "'v set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes
+    fin: "finite V" and
+    frac1: "vote_fraction R (A, V, p) = 1"
+  shows "V \<noteq> {} \<and> (\<forall> v \<in> V. p v = R)"
+proof -
+  have ne: "V \<noteq> {}"
+    using frac1
+    unfolding vote_fraction.simps
+    by fastforce
+  have "vote_count R (A, V, p) = card V"
+    using frac1 fin ne card_gt_0_iff
+    unfolding vote_fraction.simps
+    by (simp add: eq_rat One_rat_def split: if_splits)
+  hence "\<forall> v \<in> V. p v = R"
+    using fin card_subset_eq[of V "{v \<in> V. p v = R}"]
+    unfolding vote_count.simps voters_\<E>.simps profile_\<E>.simps
+    by auto
+  thus ?thesis
+    using ne by blast
+qed
+
 
 text \<open>
   Consensus membership with a fixed winner transfers along the
@@ -95,21 +258,20 @@ lemma strong_unanimity_in_anon_hom_transfer:
     cons: "E \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
   shows "E' \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
 proof -
-  obtain A\<^sub>1 V p where E_eq: "E = (A\<^sub>1, V, p)"
-    using prod_cases3 by blast
-  obtain A\<^sub>2 V' p' where E'_eq: "E' = (A\<^sub>2, V', p')"
-    using prod_cases3 by blast
-  from rel have rel_t:
-    "((A\<^sub>1, V, p), (A\<^sub>2, V', p')) \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
-    by (simp only: E_eq E'_eq)
-  from cons have cons_t: "(A\<^sub>1, V, p) \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
-    by (simp only: E_eq)
-  \<comment> \<open>Unpack the relation: both elections lie in the carrier and have equal
-      vote fractions.\<close>
+  obtain A\<^sub>1 :: "'a set" and V :: "'v set" and p :: "('a, 'v) Profile" where
+    E_eq: "E = (A\<^sub>1, V, p)"
+    using prod_cases3
+    by blast
+  obtain A\<^sub>2 :: "'a set" and V' :: "'v set" and p' :: "('a, 'v) Profile" where
+    E'_eq: "E' = (A\<^sub>2, V', p')"
+    using prod_cases3
+    by blast
+  \<comment> \<open>Unpack the relation: the target lies in the carrier and the vote
+      fractions coincide.\<close>
   have E'_in_A: "(A\<^sub>2, V', p') \<in> elections_\<A> A" and
        eq_fract: "\<forall> q. vote_fraction q (A\<^sub>1, V, p) = vote_fraction q (A\<^sub>2, V', p')"
-    using rel_t
-    unfolding anonymity_homogeneity\<^sub>\<R>.simps
+    using rel
+    unfolding E_eq E'_eq anonymity_homogeneity\<^sub>\<R>.simps
     by blast+
   hence alts': "A\<^sub>2 = A" and
         fin_V': "finite V'" and
@@ -117,88 +279,35 @@ proof -
         nonvoter': "\<forall> v. v \<notin> V' \<longrightarrow> p' v = {}"
     unfolding elections_\<A>.simps well_formed_elections_def
     by auto
+  have prof': "profile V' A p'"
+    using wf' alts'
+    by simp
   \<comment> \<open>Unpack the consensus membership of the source election.\<close>
-  have cond: "strong_unanimity\<^sub>\<C> (A\<^sub>1, V, p) \<and> A\<^sub>1 = A
-                \<and> (\<forall> v. v \<notin> V \<longrightarrow> p v = {})" and
-       fin: "finite_profile V A\<^sub>1 p" and
-       elect_E: "elect (rule_\<K> (strong_unanimity_in A)) V A\<^sub>1 p = {w}"
-    using cons_t
-    unfolding \<K>\<^sub>\<E>.simps strong_unanimity_in_def consensus_choice.simps
-    by (simp_all add: Let_def split: if_split_asm)
-  from cond obtain r where all_vote: "\<forall> v \<in> V. p v = r"
-    unfolding strong_unanimity\<^sub>\<C>.simps equal_vote\<^sub>\<C>.simps equal_vote\<^sub>\<C>'.simps
+  obtain R :: "'a Preference_Relation" where
+    A_ne: "A \<noteq> {}" and
+    fin_A: "finite A" and
+    fin_V: "finite V" and
+    V_ne: "V \<noteq> {}" and
+    unan: "\<forall> v \<in> V. p v = R" and
+    elect_R: "{a \<in> A. above R a = {a}} = {w}"
+    using strong_unanimity_in_\<K>\<^sub>\<E>D[OF cons[unfolded E_eq]]
     by blast
-  have A_nonempty: "A \<noteq> {}" and V_nonempty: "V \<noteq> {}"
-    using cond
-    unfolding strong_unanimity\<^sub>\<C>.simps nonempty_set\<^sub>\<C>.simps nonempty_profile\<^sub>\<C>.simps
-    by auto
-  \<comment> \<open>The common ballot has fraction 1 in E, hence in E'.\<close>
-  have "vote_count r (A\<^sub>1, V, p) = card V"
-  proof -
-    have "{v \<in> V. p v = r} = V"
-      using all_vote
-      by blast
-    thus ?thesis
-      unfolding vote_count.simps
-      by simp
-  qed
-  hence "vote_fraction r (A\<^sub>1, V, p) = 1"
-    using fin V_nonempty card_gt_0_iff
-    unfolding vote_fraction.simps
-    by (simp add: eq_rat One_rat_def)
-  hence fract_one': "vote_fraction r (A\<^sub>2, V', p') = 1"
+  \<comment> \<open>The common ballot has fraction one in the source, hence in the target,
+      so the target is unanimous for the same ballot.\<close>
+  have "vote_fraction R (A\<^sub>1, V, p) = 1"
+    using unanimity_vote_fraction[OF fin_V V_ne unan]
+    by simp
+  hence "vote_fraction R (A\<^sub>2, V', p') = 1"
     using eq_fract
     by metis
-  hence V'_nonempty: "V' \<noteq> {}"
-    unfolding vote_fraction.simps
-    by fastforce
-  have "vote_count r (A\<^sub>2, V', p') = card V'"
-    using fract_one' fin_V' V'_nonempty card_gt_0_iff
-    unfolding vote_fraction.simps
-    by (simp add: eq_rat One_rat_def split: if_splits)
-  hence all_vote': "\<forall> v \<in> V'. p' v = r"
-    using fin_V' card_subset_eq[of V' "{v \<in> V'. p' v = r}"]
-    unfolding vote_count.simps voters_\<E>.simps profile_\<E>.simps
-    by auto
-  \<comment> \<open>Hence E' satisfies the restricted consensus condition.\<close>
-  have cond': "strong_unanimity\<^sub>\<C> (A\<^sub>2, V', p') \<and> A\<^sub>2 = A
-                \<and> (\<forall> v. v \<notin> V' \<longrightarrow> p' v = {})"
-    using all_vote' alts' nonvoter' A_nonempty V'_nonempty
-    unfolding strong_unanimity\<^sub>\<C>.simps nonempty_set\<^sub>\<C>.simps
-              nonempty_profile\<^sub>\<C>.simps equal_vote\<^sub>\<C>.simps equal_vote\<^sub>\<C>'.simps
-    by auto
-  have fin': "finite_profile V' A\<^sub>2 p'"
-    using fin alts' fin_V' wf' cond
-    by simp
-  \<comment> \<open>Both elections elect the same singleton: both run elect_first_module
-      on the same ballot r.\<close>
-  have least_V: "least V \<in> V" and least_V': "least V' \<in> V'"
-    using V_nonempty V'_nonempty LeastI_ex ex_in_conv
-    unfolding least.simps
-    by metis+
-  have "elect (rule_\<K> (strong_unanimity_in A)) V' A\<^sub>2 p' =
-          {a \<in> A\<^sub>2. above (p' (least V')) a = {a}}"
-    using cond'
-    unfolding strong_unanimity_in_def consensus_choice.simps
-    by (simp add: Let_def)
-  also have "\<dots> = {a \<in> A\<^sub>1. above r a = {a}}"
-    using all_vote' least_V' alts' cond
-    by simp
-  also have "\<dots> = elect (rule_\<K> (strong_unanimity_in A)) V A\<^sub>1 p"
-    using cond all_vote least_V
-    unfolding strong_unanimity_in_def consensus_choice.simps
-    by (simp add: Let_def)
-  finally have elect_E': "elect (rule_\<K> (strong_unanimity_in A)) V' A\<^sub>2 p' = {w}"
-    using elect_E
-    by simp
-  have "(A\<^sub>2, V', p') \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
-    using cond' fin' elect_E' A_nonempty
-    unfolding \<K>\<^sub>\<E>.simps strong_unanimity_in_def consensus_choice.simps
-    by (simp add: Let_def)
+  hence V'_ne: "V' \<noteq> {}" and unan': "\<forall> v \<in> V'. p' v = R"
+    using vote_fraction_one_imp_unanimous[OF fin_V']
+    by blast+
+  have "(A, V', p') \<in> \<K>\<^sub>\<E> (strong_unanimity_in A) w"
+    by (rule strong_unanimity_in_\<K>\<^sub>\<E>I[OF A_ne fin_A fin_V' V'_ne prof' nonvoter' unan' elect_R])
   thus ?thesis
-    by (simp only: E'_eq)
+    unfolding E'_eq alts' .
 qed
-
 
 lemma strong_unanimity_in_closed_under_anon_hom:
   fixes A :: "'a set"
@@ -826,76 +935,6 @@ proof -
 qed
 
 subsection \<open>Simplicity of the Normalized Swap Distance\<close>
-
-text \<open>
-  The vote fractions of a unanimity election form the indicator of its
-  common ballot.
-\<close>
-
-lemma unanimity_vote_fraction:
-  fixes
-    A :: "'a set" and
-    V :: "'v set" and
-    p :: "('a, 'v) Profile" and
-    R q :: "'a Preference_Relation"
-  assumes
-    fin: "finite V" and
-    ne: "V \<noteq> {}" and
-    unan: "\<forall> v \<in> V. p v = R"
-  shows "vote_fraction q (A, V, p) = (if q = R then 1 else 0)"
-proof (cases "q = R")
-  case True
-  have "{v \<in> V. p v = q} = V"
-    using unan True by blast
-  hence count: "vote_count q (A, V, p) = card V"
-    by simp
-  have "card V \<noteq> 0"
-    using fin ne by (simp add: card_eq_0_iff)
-  hence "Fract (int (card V)) (int (card V)) = 1"
-    by (simp add: Fract_of_int_quotient)
-  thus ?thesis
-    using count fin ne True by simp
-next
-  case False
-  hence "{v \<in> V. p v = q} = {}"
-    using unan by auto
-  hence "vote_count q (A, V, p) = 0"
-    by (simp add: card_eq_0_iff)
-  thus ?thesis
-    using False by (simp add: rat_number_collapse)
-qed
-
-text \<open>
-  Conversely, a ballot with vote fraction one is cast by every voter.
-\<close>
-
-lemma vote_fraction_one_imp_unanimous:
-  fixes
-    A :: "'a set" and
-    V :: "'v set" and
-    p :: "('a, 'v) Profile" and
-    R :: "'a Preference_Relation"
-  assumes
-    fin: "finite V" and
-    frac1: "vote_fraction R (A, V, p) = 1"
-  shows "V \<noteq> {} \<and> (\<forall> v \<in> V. p v = R)"
-proof -
-  have ne: "V \<noteq> {}"
-    using frac1
-    unfolding vote_fraction.simps
-    by fastforce
-  have "vote_count R (A, V, p) = card V"
-    using frac1 fin ne card_gt_0_iff
-    unfolding vote_fraction.simps
-    by (simp add: eq_rat One_rat_def split: if_splits)
-  hence "\<forall> v \<in> V. p v = R"
-    using fin card_subset_eq[of V "{v \<in> V. p v = R}"]
-    unfolding vote_count.simps voters_\<E>.simps profile_\<E>.simps
-    by auto
-  thus ?thesis
-    using ne by blast
-qed
-
 
 lemma swap_l_one_avg_simple:
   fixes A :: "'a set"

@@ -830,6 +830,108 @@ proof -
 qed
 
 text \<open>
+  A unanimous ballot of a well-formed election is a linear order on the
+  alternatives.
+\<close>
+
+lemma unanimous_ballot_lin_ord:
+  fixes
+    A :: "'a set" and
+    V :: "'v set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes
+    ne: "V \<noteq> {}" and
+    prof: "profile V A p" and
+    unan: "\<forall> v \<in> V. p v = R"
+  shows "linear_order_on A R"
+proof -
+  obtain v where "v \<in> V"
+    using ne
+    by blast
+  thus ?thesis
+    using prof unan
+    unfolding profile_def
+    by metis
+qed
+
+text \<open>
+  The unanimity election on a voter set \<open>V\<close> with common ballot \<open>R\<close>:
+  every voter casts \<open>R\<close>, every non-voter the empty ballot. It is the
+  canonical partner of an election in the consensus class of \<open>R\<close>.
+\<close>
+
+definition unanimity_election :: "'a set \<Rightarrow> 'v set \<Rightarrow> 'a Preference_Relation
+                                    \<Rightarrow> ('a, 'v) Election" where
+  "unanimity_election A V R = (A, V, \<lambda> v. if v \<in> V then R else {})"
+
+lemma unanimity_election_in_elections_\<A>:
+  fixes
+    A :: "'a set" and
+    V :: "'v set" and
+    R :: "'a Preference_Relation"
+  assumes
+    fin: "finite V" and
+    lin: "linear_order_on A R"
+  shows "unanimity_election A V R \<in> elections_\<A> A"
+  using fin lin
+  unfolding unanimity_election_def elections_\<A>.simps well_formed_elections_def
+  by (auto simp add: profile_def)
+
+lemma swap_dist_avg_unanimity_election:
+  fixes
+    A :: "'a set" and
+    V :: "'v :: linorder set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes fin: "finite V"
+  shows "votewise_distance swap l_one_avg (A, V, p) (unanimity_election A V R)
+          = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
+  unfolding unanimity_election_def
+  by (rule swap_dist_avg_to_unanimity[OF fin]) simp
+
+text \<open>
+  A unanimity election with ballot \<open>R\<close> is related to the unanimity election
+  with the same ballot on any other finite, nonempty voter set, since both
+  have the indicator of \<open>R\<close> as their vote fractions.
+\<close>
+
+lemma unanimity_election_anon_hom_related:
+  fixes
+    A :: "'a set" and
+    V V' :: "'v set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes
+    E_X: "(A, V, p) \<in> elections_\<A> A" and
+    ne: "V \<noteq> {}" and
+    unan: "\<forall> v \<in> V. p v = R" and
+    fin': "finite V'" and
+    ne': "V' \<noteq> {}"
+  shows "((A, V, p), unanimity_election A V' R)
+          \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
+proof -
+  have fin: "finite V" and prof: "profile V A p"
+    using E_X
+    unfolding elections_\<A>.simps well_formed_elections_def
+    by auto
+  have lin_R: "linear_order_on A R"
+    by (rule unanimous_ballot_lin_ord[OF ne prof unan])
+  have E'_X: "unanimity_election A V' R \<in> elections_\<A> A"
+    by (rule unanimity_election_in_elections_\<A>[OF fin' lin_R])
+  have unan': "\<forall> v \<in> V'. (\<lambda> v. if v \<in> V' then R else ({} :: 'a Preference_Relation)) v = R"
+    by simp
+  have "\<forall> q. vote_fraction q (A, V, p) = vote_fraction q (unanimity_election A V' R)"
+    unfolding unanimity_election_def
+    using unanimity_vote_fraction[OF fin ne unan] unanimity_vote_fraction[OF fin' ne' unan']
+    by simp
+  thus ?thesis
+    using E_X E'_X fin fin'
+    unfolding anonymity_homogeneity\<^sub>\<R>.simps unanimity_election_def
+    by fastforce
+qed
+
+text \<open>
   One unanimity class: all elections over A in which a finite, nonempty
   electorate unanimously votes R, with empty ballots outside the electorate.
   Conceptually, each such class is a single anonymity-homogeneity class,
@@ -1286,17 +1388,18 @@ lemma swap_score_anon_hom_le:
     w :: "'a"
   assumes rel: "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
   shows "score (votewise_distance swap l_one_avg) (strong_unanimity_in A) E' w
-           \<le> score (votewise_distance swap l_one_avg) (strong_unanimity_in A) E w"
-
-  proof -
-  let ?d = "votewise_distance swap l_one_avg
-              :: ('a, 'v) Election Distance"
+          \<le> score (votewise_distance swap l_one_avg) (strong_unanimity_in A) E w"
+proof -
+  let ?d = "votewise_distance swap l_one_avg :: ('a, 'v) Election Distance"
   let ?K = "\<K>\<^sub>\<E> (strong_unanimity_in A) w"
-  obtain A\<^sub>1 V p where E_eq: "E = (A\<^sub>1, V, p)"
-    using prod_cases3 by blast
-
-obtain A\<^sub>2 V' p' where E'_eq: "E' = (A\<^sub>2, V', p')"
-    using prod_cases3 by blast
+  obtain A\<^sub>1 :: "'a set" and V :: "'v set" and p :: "('a, 'v) Profile" where
+    E_eq: "E = (A\<^sub>1, V, p)"
+    using prod_cases3
+    by blast
+  obtain A\<^sub>2 :: "'a set" and V' :: "'v set" and p' :: "('a, 'v) Profile" where
+    E'_eq: "E' = (A\<^sub>2, V', p')"
+    using prod_cases3
+    by blast
   have E_X: "E \<in> elections_\<A> A" and E'_X: "E' \<in> elections_\<A> A"
     using rel
     unfolding anonymity_homogeneity\<^sub>\<R>.simps
@@ -1309,119 +1412,77 @@ obtain A\<^sub>2 V' p' where E'_eq: "E' = (A\<^sub>2, V', p')"
     using E'_X
     unfolding E'_eq elections_\<A>.simps
     by auto
-  have E_A: "E = (A, V, p)"
-    using E_eq alts1 by simp
-  have E'_A: "E' = (A, V', p')"
-    using E'_eq alts2 by simp
-from rel have rel_t:
-    "((A, V, p), (A, V', p')) \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
+  have E_A: "E = (A, V, p)" and E'_A: "E' = (A, V', p')"
+    using E_eq E'_eq alts1 alts2
+    by simp_all
+  have rel_t: "((A, V, p), (A, V', p')) \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
+    using rel
     by (simp only: E_A E'_A)
-
-  have lb: "Inf (?d E' ` ?K) \<le> y" if y_in: "y \<in> ?d E ` ?K" for y
+  have lb: "Inf (?d E' ` ?K) \<le> y" if y_in: "y \<in> ?d E ` ?K" for y :: "ereal"
   proof -
     from y_in obtain b where b_cons: "b \<in> ?K" and y_eq: "y = ?d E b"
       by blast
-    obtain A\<^sub>b V\<^sub>b p\<^sub>b where b_eq: "b = (A\<^sub>b, V\<^sub>b, p\<^sub>b)"
-      using prod_cases3 by blast
-    have cond_b: "strong_unanimity\<^sub>\<C> (A\<^sub>b, V\<^sub>b, p\<^sub>b) \<and> A\<^sub>b = A
-                    \<and> (\<forall> v. v \<notin> V\<^sub>b \<longrightarrow> p\<^sub>b v = {})" and
-         fin_b: "finite_profile V\<^sub>b A\<^sub>b p\<^sub>b"
-      using b_cons
-      unfolding b_eq \<K>\<^sub>\<E>.simps strong_unanimity_in_def consensus_choice.simps
-      by (simp_all add: Let_def split: if_split_asm)
-    from cond_b obtain R where R_unan: "\<forall> v \<in> V\<^sub>b. p\<^sub>b v = R"
-      unfolding strong_unanimity\<^sub>\<C>.simps equal_vote\<^sub>\<C>.simps equal_vote\<^sub>\<C>'.simps
+    obtain A\<^sub>b :: "'a set" and V\<^sub>b :: "'v set" and p\<^sub>b :: "('a, 'v) Profile" where
+      b_eq: "b = (A\<^sub>b, V\<^sub>b, p\<^sub>b)"
+      using prod_cases3
       by blast
-    have b_fin: "finite V\<^sub>b"
-      using fin_b by simp
-    have b_ne: "V\<^sub>b \<noteq> {}"
-      using cond_b
-      unfolding strong_unanimity\<^sub>\<C>.simps nonempty_set\<^sub>\<C>.simps
-                nonempty_profile\<^sub>\<C>.simps
-  by auto
-   have b_alts: "A\<^sub>b = A"
-      using cond_b by simp
+    obtain R :: "'a Preference_Relation" where
+      b_alts: "A\<^sub>b = A" and
+      b_ne: "V\<^sub>b \<noteq> {}" and
+      R_unan: "\<forall> v \<in> V\<^sub>b. p\<^sub>b v = R"
+      using strong_unanimity_in_\<K>\<^sub>\<E>D[OF b_cons[unfolded b_eq]]
+      by blast
+    have b_A: "b = (A, V\<^sub>b, p\<^sub>b)"
+      using b_eq b_alts
+      by simp
     show ?thesis
     proof (cases "V\<^sub>b = V")
       case False
+      \<comment> \<open>Partners on another voter set are at distance \<open>\<infinity>\<close>.\<close>
       have "y = \<infinity>"
         using False
-        unfolding y_eq E_A b_eq
+        unfolding y_eq E_A b_A
         by simp
       thus ?thesis
         by simp
     next
       case True
-      \<comment> \<open>b lives on E's own voter set, so it is a "real" partner:
-          construct the matching partner for E'.\<close>
-      have V_ne: "V \<noteq> {}"
-        using b_ne True by simp
+      \<comment> \<open>b lives on E's own voter set; the matching partner for E' is the
+          unanimity-R election on V'.\<close>
+      let ?b' = "unanimity_election A V' R"
       have V'_ne: "V' \<noteq> {}"
-        using anon_hom_empty_iff[OF rel_t] V_ne by blast
+        using anon_hom_empty_iff[OF rel_t] b_ne True
+        by blast
+      have b_X: "(A, V\<^sub>b, p\<^sub>b) \<in> elections_\<A> A"
+        using b_cons[unfolded b_A] strong_unanimity_elections_subset
+        unfolding elections_\<K>.simps
+        by blast
+      have "((A, V\<^sub>b, p\<^sub>b), ?b') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
+        by (rule unanimity_election_anon_hom_related[OF b_X b_ne R_unan fin_V' V'_ne])
+      hence b'_cons: "?b' \<in> ?K"
+        by (rule strong_unanimity_in_anon_hom_transfer[OF _ b_cons[unfolded b_A]])
+      \<comment> \<open>Both distances collapse to the distance to the constant-R profile,
+          and those agree by the engine lemma.\<close>
       have p\<^sub>b_R: "\<forall> v \<in> V. p\<^sub>b v = R"
-       using R_unan True by simp
-      have prof_b: "profile V\<^sub>b A p\<^sub>b"
-        using fin_b b_alts by simp
-      have lin_R: "linear_order_on A R"
-      proof -
-        obtain v\<^sub>0 where "v\<^sub>0 \<in> V\<^sub>b"
-          using b_ne by blast
-        thus ?thesis
-          using prof_b R_unan
-          unfolding profile_def
-          by metis
-      qed
-      define b' :: "('a, 'v) Election" where
-        "b' = (A, V', \<lambda> v. if v \<in> V' then R else {})"
-      have unan_b': "\<forall> v \<in> V'.
-            (if v \<in> V' then R else ({} :: 'a Preference_Relation)) = R"
+        using R_unan True
         by simp
-      have b'_X: "b' \<in> elections_\<A> A"
-        using fin_V' lin_R
-        unfolding b'_def elections_\<A>.simps well_formed_elections_def
-        by (auto simp add: profile_def)
-      have b_Y: "b \<in> elections_\<K> (strong_unanimity_in A)"
-        using b_cons
-       unfolding elections_\<K>.simps
-        by blast
-      have b_X: "b \<in> elections_\<A> A"
-        using b_Y strong_unanimity_elections_subset by blast
-      have frac_b': "\<forall> q. vote_fraction q (A\<^sub>b, V\<^sub>b, p\<^sub>b) = vote_fraction q b'"
-      proof
-        fix q
-        have "vote_fraction q (A\<^sub>b, V\<^sub>b, p\<^sub>b) = (if q = R then 1 else 0)"
-          by (rule unanimity_vote_fraction[OF b_fin b_ne R_unan])
-        moreover have "vote_fraction q b' = (if q = R then 1 else 0)"
-          unfolding b'_def
-          by (rule unanimity_vote_fraction[OF fin_V' V'_ne unan_b'])
-        ultimately show "vote_fraction q (A\<^sub>b, V\<^sub>b, p\<^sub>b) = vote_fraction q b'"
-          by simp
-      qed
-      have "(b, b') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
-        using b_X b'_X frac_b'
-        unfolding b_eq anonymity_homogeneity\<^sub>\<R>.simps
-        by fastforce
-      hence b'_cons: "b' \<in> ?K"
-        using strong_unanimity_in_anon_hom_transfer[OF _ b_cons]
-        by blast
-     \<comment> \<open>Both distances collapse to the score against the constant-R
-          profile, and those scores agree by the engine lemma.\<close>
-      have b_A: "b = (A, V, p\<^sub>b)"
-        using b_eq b_alts True by simp
+      have b_V: "b = (A, V, p\<^sub>b)"
+        using b_A True
+        by simp
       have dist_b: "?d E b = ?d (A, V, p) (A, V, \<lambda> v. R)"
-        unfolding E_A b_A
+        unfolding E_A b_V
         by (rule swap_dist_avg_to_unanimity[OF fin_V p\<^sub>b_R])
-      have dist_b': "?d E' b' = ?d (A, V', p') (A, V', \<lambda> v. R)"
-        unfolding E'_A b'_def
-        by (rule swap_dist_avg_to_unanimity[OF fin_V' unan_b'])
-      have engine: "?d (A, V, p) (A, V, \<lambda> v. R)
-                      = ?d (A, V', p') (A, V', \<lambda> v. R)"
+      have dist_b': "?d E' ?b' = ?d (A, V', p') (A, V', \<lambda> v. R)"
+        unfolding E'_A
+        by (rule swap_dist_avg_unanimity_election[OF fin_V'])
+      have engine: "?d (A, V, p) (A, V, \<lambda> v. R) = ?d (A, V', p') (A, V', \<lambda> v. R)"
         by (rule swap_dist_avg_invar_anon_hom[OF rel_t])
-      have "?d E' b' \<in> ?d E' ` ?K"
-        using b'_cons by blast
-      hence "Inf (?d E' ` ?K) \<le> ?d E' b'"
+      have "?d E' ?b' \<in> ?d E' ` ?K"
+        using b'_cons
+        by blast
+      hence "Inf (?d E' ` ?K) \<le> ?d E' ?b'"
         by (rule Inf_lower)
-      also have "?d E' b' = y"
+      also have "?d E' ?b' = y"
         unfolding y_eq
         by (simp only: dist_b dist_b' engine)
       finally show ?thesis .

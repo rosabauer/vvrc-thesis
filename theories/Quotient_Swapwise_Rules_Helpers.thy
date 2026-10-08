@@ -424,10 +424,43 @@ proof -
 qed
 
 text \<open>
+  On a finite, nonempty voter set, the normalized swap distance to the
+  constant-R profile is the sum over the cast ballots of their vote count times
+  their swap distance to R, divided by the number of voters. This combines the
+  counting formula with the normalization of \<open>l_one_avg\<close>.
+\<close>
+
+lemma swap_dist_avg_as_sum:
+  fixes
+    A :: "'a set" and
+    V :: "'v :: linorder set" and
+    p :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes
+    fin: "finite V" and
+    ne: "V \<noteq> {}"
+  shows "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
+          = ereal ((\<Sum> r \<in> p ` V. real (vote_count r (A, V, p))
+                      * real (card (pairwise_disagreements A r R))) / real (card V))"
+proof -
+  have n_pos: "0 < card V"
+    using fin ne card_gt_0_iff
+    by blast
+  have raw: "votewise_distance swap l_one (A, V, p) (A, V, \<lambda> v. R)
+      = ereal (\<Sum> r \<in> p ` V. real (vote_count r (A, V, p))
+                  * real (card (pairwise_disagreements A r R)))"
+    unfolding swap_dist_counting_formula[OF fin ne]
+    by simp
+  show ?thesis
+    unfolding dist_avg_norm_eq_normalized_dist[OF fin ne] raw
+    using n_pos
+    by simp
+qed
+
+text \<open>
   Homogeneity half of the engine lemma: equal vote fractions imply equal
   normalized swap distance to the unanimity-R election on one's own voter set.
 \<close>
-
 
 lemma swap_dist_avg_hom_invar:
   fixes
@@ -436,85 +469,38 @@ lemma swap_dist_avg_hom_invar:
     p p' :: "('a, 'v) Profile" and
     R :: "'a Preference_Relation"
   assumes
-    fin:      "finite V"      and fin':      "finite V'" and
-    nonempty: "V \<noteq> {}"        and nonempty': "V' \<noteq> {}" and
-    eq_frac:  "\<forall> r. vote_fraction r (A, V, p) = vote_fraction r (A, V', p')"
-  shows
-    "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
-       = votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)"
+    fin: "finite V" and
+    fin': "finite V'" and
+    nonempty: "V \<noteq> {}" and
+    nonempty': "V' \<noteq> {}" and
+    eq_frac: "\<forall> r. vote_fraction r (A, V, p) = vote_fraction r (A, V', p')"
+  shows "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
+          = votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)"
 proof -
-  let ?raw  = "votewise_distance swap l_one (A, V, p) (A, V, \<lambda> v. R)"
-  let ?raw' = "votewise_distance swap l_one (A, V', p') (A, V', \<lambda> v. R)"
-  let ?n    = "card V"
-  let ?n'   = "card V'"
-
+  let ?n = "card V"
+  let ?n' = "card V'"
   define cost :: "'a Preference_Relation \<Rightarrow> real" where
     "cost = (\<lambda> r. real (card (pairwise_disagreements A r R)))"
-
-  have n_pos:  "0 < ?n"  using fin  nonempty  card_gt_0_iff by blast
-  have n'_pos: "0 < ?n'" using fin' nonempty' card_gt_0_iff by blast
-
- \<comment> \<open>Step 1: apply the counting formula and rewrite the nat sum as a real sum.\<close>
-  have step1: "?raw = ereal (\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r)"
-  proof -
-    have "?raw = ereal (\<Sum> r \<in> p ` V.
-                   vote_count r (A, V, p) * card (pairwise_disagreements A r R))"
-      by (rule swap_dist_counting_formula[OF fin nonempty])
-    also have "\<dots> = ereal (\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r)"
-      by (simp add: cost_def)
-    finally show ?thesis .
-  qed
-
-  have step1': "?raw' = ereal (\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r)"
-  proof -
-    have "?raw' = ereal (\<Sum> r \<in> p' ` V'.
-                    vote_count r (A, V', p') * card (pairwise_disagreements A r R))"
-      by (rule swap_dist_counting_formula[OF fin' nonempty'])
-    also have "\<dots> = ereal (\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r)"
-      by (simp add: cost_def)
-    finally show ?thesis .
-  qed
-
-  \<comment> \<open>Step 2: l_one_avg is l_one divided by card V.\<close>
-  have step2: "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
-                 = ?raw / ereal (real ?n)"
-  proof -
-    let ?xs = "map2 (\<lambda> q q'. swap (A, q) (A, q'))
-                    (to_list V p) (to_list V (\<lambda> v. R))"
-    have vwd_avg: "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R) = l_one_avg ?xs"
-      using fin nonempty by simp
-    show ?thesis
-      unfolding vwd_avg
-      by (simp add: fin nonempty)
-  qed
-
-  have step2': "votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)
-                  = ?raw' / ereal (real ?n')"
-  proof -
-    let ?xs' = "map2 (\<lambda> q q'. swap (A, q) (A, q'))
-                     (to_list V' p') (to_list V' (\<lambda> v. R))"
-    have vwd_avg': "votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)
-                      = l_one_avg ?xs'"
-      using fin' nonempty' by simp
-        show ?thesis
-      unfolding vwd_avg'
-      by (simp add: fin' nonempty')
-  qed
-
- \<comment> \<open>Step 3a: equal vote fractions give a cross-multiplication identity on counts.
-      Both sides of vote_fraction's if-guard are in the true branch here.\<close>
+  let ?s = "\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r"
+  let ?s' = "\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r"
+  have n_pos: "0 < ?n"
+    using fin nonempty card_gt_0_iff
+    by blast
+  have n'_pos: "0 < ?n'"
+    using fin' nonempty' card_gt_0_iff
+    by blast
+  \<comment> \<open>Equal vote fractions give a cross-multiplication identity on the counts.\<close>
   have cross: "\<forall> r. vote_count r (A, V, p) * ?n' = vote_count r (A, V', p') * ?n"
   proof
-    fix r
+    fix r :: "'a Preference_Relation"
     have eq: "vote_fraction r (A, V, p) = vote_fraction r (A, V', p')"
-      using eq_frac by blast
-    hence "Fract (vote_count r (A, V, p)) ?n
-             = Fract (vote_count r (A, V', p')) ?n'"
+      using eq_frac
+      by blast
+    hence "Fract (vote_count r (A, V, p)) ?n = Fract (vote_count r (A, V', p')) ?n'"
       using fin nonempty fin' nonempty'
       unfolding vote_fraction.simps voters_\<E>.simps
       by simp
-    hence "int (vote_count r (A, V, p)) * int ?n'
-             = int (vote_count r (A, V', p')) * int ?n"
+    hence "int (vote_count r (A, V, p)) * int ?n' = int (vote_count r (A, V', p')) * int ?n"
       using n_pos n'_pos
       by (simp add: eq_rat)
     thus "vote_count r (A, V, p) * ?n' = vote_count r (A, V', p') * ?n"
@@ -522,51 +508,42 @@ proof -
   qed
   have img_eq: "p ` V = p' ` V'"
     by (rule image_eq_of_cross[OF fin fin' n_pos n'_pos cross])
-
-  \<comment> \<open>Step 3b: distribute the factor, rewrite each summand via cross, collect.\<close>
-  have raw_cross:
-    "(\<Sum> r \<in> p ` V.  real (vote_count r (A, V, p))  * cost r) * real ?n'
-   = (\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r) * real ?n"
+  \<comment> \<open>Distribute the factor, rewrite each summand via the identity, collect.\<close>
+  have raw_cross: "?s * real ?n' = ?s' * real ?n"
   proof -
-    have "(\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r) * real ?n'
-            = (\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r * real ?n')"
+    have "?s * real ?n' = (\<Sum> r \<in> p ` V. real (vote_count r (A, V, p)) * cost r * real ?n')"
       by (simp add: sum_distrib_right)
     also have "\<dots> = (\<Sum> r \<in> p ` V. real (vote_count r (A, V', p')) * cost r * real ?n)"
     proof (intro sum.cong refl)
-      fix r assume "r \<in> p ` V"
+      fix r :: "'a Preference_Relation"
+      assume "r \<in> p ` V"
       have "vote_count r (A, V, p) * ?n' = vote_count r (A, V', p') * ?n"
-        using cross by blast
-      hence "real (vote_count r (A, V, p)) * real ?n'
-               = real (vote_count r (A, V', p')) * real ?n"
+        using cross
+        by blast
+      hence "real (vote_count r (A, V, p)) * real ?n' = real (vote_count r (A, V', p')) * real ?n"
         by (metis of_nat_mult)
-      thus "real (vote_count r (A, V, p))  * cost r * real ?n'
+      thus "real (vote_count r (A, V, p)) * cost r * real ?n'
               = real (vote_count r (A, V', p')) * cost r * real ?n"
-          by (metis mult.assoc mult.commute)
+        by (metis mult.assoc mult.commute)
     qed simp
     also have "\<dots> = (\<Sum> r \<in> p ` V. real (vote_count r (A, V', p')) * cost r) * real ?n"
       by (simp add: sum_distrib_right)
-    also have "\<dots> = (\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r) * real ?n"
+    also have "\<dots> = ?s' * real ?n"
       by (simp add: img_eq)
     finally show ?thesis .
   qed
-
-\<comment> \<open>Step 3c: cancel the factors and lift the equality into ereal.\<close>
-  show ?thesis
-  proof -
-    let ?s  = "\<Sum> r \<in> p ` V.  real (vote_count r (A, V, p))  * cost r"
-    let ?s' = "\<Sum> r \<in> p' ` V'. real (vote_count r (A, V', p')) * cost r"
-    have real_eq: "?s / real ?n = ?s' / real ?n'"
-      using raw_cross n_pos n'_pos
-      by (auto simp: field_simps)
-    have "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)
-            = ereal (?s / real ?n)"
-      using step1 step2 n_pos by simp
-    also have "\<dots> = ereal (?s' / real ?n')"
-      by (simp only: real_eq)
-    also have "\<dots> = votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)"
-      using step1' step2' n'_pos by simp
-    finally show ?thesis .
-  qed
+  have real_eq: "?s / real ?n = ?s' / real ?n'"
+    using raw_cross n_pos n'_pos
+    by (auto simp: field_simps)
+  have "votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R) = ereal (?s / real ?n)"
+    unfolding cost_def
+    by (rule swap_dist_avg_as_sum[OF fin nonempty])
+  also have "\<dots> = ereal (?s' / real ?n')"
+    by (simp only: real_eq)
+  also have "\<dots> = votewise_distance swap l_one_avg (A, V', p') (A, V', \<lambda> v. R)"
+    unfolding cost_def
+    by (rule swap_dist_avg_as_sum[OF fin' nonempty', symmetric])
+  finally show ?thesis .
 qed
 
 text \<open>

@@ -399,43 +399,28 @@ lemma image_eq_of_cross:
     V V' :: "'v :: linorder set" and
     p p' :: "('a, 'v) Profile"
   assumes
-    fin:    "finite V" and
-    fin':   "finite V'" and
-    n_pos:  "0 < card V" and
+    fin: "finite V" and
+    fin': "finite V'" and
+    n_pos: "0 < card V" and
     n'_pos: "0 < card V'" and
-    cross:  "\<forall> r. vote_count r (A, V, p) * card V'
-                    = vote_count r (A, V', p') * card V"
+    cross: "\<forall> r. vote_count r (A, V, p) * card V' = vote_count r (A, V', p') * card V"
   shows "p ` V = p' ` V'"
-proof (rule Set.equalityI; rule subsetI)
-  fix r assume "r \<in> p ` V"
-  hence vc: "vote_count r (A, V, p) \<noteq> 0"
-    using fin vote_count_mem_image_iff by blast
-  have cross_r: "vote_count r (A, V, p) * card V'
-                   = vote_count r (A, V', p') * card V"
-    using cross by blast
-  have "vote_count r (A, V, p) * card V' \<noteq> 0"
-    using vc n'_pos by simp
-  hence "vote_count r (A, V', p') * card V \<noteq> 0"
-    by (metis cross_r)
-  hence "vote_count r (A, V', p') \<noteq> 0"
-    using n_pos by simp
-  thus "r \<in> p' ` V'"
-    using fin' vote_count_mem_image_iff by blast
-next
-  fix r assume "r \<in> p' ` V'"
-  hence vc': "vote_count r (A, V', p') \<noteq> 0"
-    using fin' vote_count_mem_image_iff by blast
-  have cross_r: "vote_count r (A, V, p) * card V'
-                   = vote_count r (A, V', p') * card V"
-    using cross by blast
-  have "vote_count r (A, V', p') * card V \<noteq> 0"
-    using vc' n_pos by simp
-  hence "vote_count r (A, V, p) * card V' \<noteq> 0"
-    using cross_r by simp
-  hence "vote_count r (A, V, p) \<noteq> 0"
-    using n'_pos by simp
-  thus "r \<in> p ` V"
-    using fin vote_count_mem_image_iff by blast
+proof -
+  have "r \<in> p ` V \<longleftrightarrow> r \<in> p' ` V'" for r :: "'a Preference_Relation"
+  proof -
+    have "card V \<noteq> 0" and "card V' \<noteq> 0"
+      using n_pos n'_pos
+      by simp_all
+    hence "(vote_count r (A, V, p) = 0) = (vote_count r (A, V', p') = 0)"
+      using cross[rule_format, of r]
+      by (metis mult_is_0)
+    thus ?thesis
+      using vote_count_mem_image_iff[OF fin, where A = A and p = p and r = r]
+            vote_count_mem_image_iff[OF fin', where A = A and p = p' and r = r]
+      by blast
+  qed
+  thus ?thesis
+    by blast
 qed
 
 text \<open>

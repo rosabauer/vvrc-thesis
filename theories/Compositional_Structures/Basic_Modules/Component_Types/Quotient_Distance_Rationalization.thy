@@ -384,6 +384,47 @@ proof -
       using linorder_not_less
       by simp
   qed
+
+text \<open>
+  Simplicity follows whenever the infimum of the distances from a point to a
+  class \<open>B\<close> does not depend on which point of the class \<open>A\<close> is chosen: then any
+  point of \<open>A\<close> witnesses it, since the two-sided infimum over \<open>A\<close> and \<open>B\<close>
+  flattens to that common value.
+\<close>
+
+lemma inner_inf_const_imp_simple_on:
+  fixes
+    Y X :: "'x set" and
+    r :: "'x rel" and
+    d :: "'x Distance"
+  assumes
+    equiv_rel: "equiv X r" and
+    const: "\<forall> A \<in> X // r. \<forall> B \<in> Y // r. \<forall> x \<in> A. \<forall> x' \<in> A.
+              Inf {d x b | b. b \<in> B} = Inf {d x' b | b. b \<in> B}"
+  shows "simple_on Y r X d"
+proof (unfold simple_on.simps, intro ballI)
+  fix A :: "'x set"
+  assume A_cls: "A \<in> X // r"
+  have "A \<noteq> {}"
+    using A_cls equiv_rel in_quotient_imp_non_empty
+    by blast
+  then obtain a where a_in: "a \<in> A"
+    by blast
+  show "\<exists> a \<in> A. \<forall> B \<in> Y // r. distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B}"
+  proof (rule bexI[OF _ a_in], intro ballI)
+    fix B :: "'x set"
+    assume B_cls: "B \<in> Y // r"
+    have inner_const: "Inf {d x b | b. b \<in> B} = Inf {d a b | b. b \<in> B}" if "x \<in> A" for x
+      using const A_cls B_cls that a_in
+      by blast
+    have "{Inf {d x b | b. b \<in> B} | x. x \<in> A} = {Inf {d a b | b. b \<in> B}}"
+      using inner_const a_in
+      by blast
+    thus "distance_infimum\<^sub>\<Q> d A B = Inf {d a b | b. b \<in> B}"
+      unfolding distance_infimum\<^sub>\<Q>.simps inf_helper
+      by simp
+  qed
+qed
   ultimately show ?thesis
     by simp
 qed

@@ -170,14 +170,142 @@ proof -
     by simp
 qed
 
+subsection ‹Ballot Maps and Vote Fractions›
+
+text ‹
+  All transformations considered below leave the voters untouched and act on
+  the ballots by a map ‹τ› with a two-sided inverse ‹σ›. Such a map only
+  permutes which ballot has which vote count, so vote counts and vote fractions
+  are carried along, and related elections stay related.
+›
+
+lemma vote_count_profile_map:
+  fixes
+    τ σ :: "'a Preference_Relation ⇒ 'a Preference_Relation" and
+    q :: "'a Preference_Relation" and
+    E E' :: "('a, 'v) Election"
+  assumes
+    inv_στ: "⋀ s. σ (τ s) = s" and
+    inv_τσ: "⋀ s. τ (σ s) = s" and
+    voters: "voters_ℰ E' = voters_ℰ E" and
+    prof: "profile_ℰ E' = τ ∘ profile_ℰ E"
+  shows "vote_count q E' = vote_count (σ q) E"
+proof -
+  have set_eq: "{v ∈ voters_ℰ E. τ (profile_ℰ E v) = q} = {v ∈ voters_ℰ E. profile_ℰ E v = σ q}"
+  proof (rule Collect_cong)
+    fix v :: "'v"
+    show "(v ∈ voters_ℰ E ∧ τ (profile_ℰ E v) = q) = (v ∈ voters_ℰ E ∧ profile_ℰ E v = σ q)"
+      using inv_στ inv_τσ
+      by metis
+  qed
+  have "vote_count q E' = card {v ∈ voters_ℰ E. τ (profile_ℰ E v) = q}"
+    unfolding vote_count.simps voters prof
+    by (simp add: comp_def)
+  also have "… = card {v ∈ voters_ℰ E. profile_ℰ E v = σ q}"
+    by (simp only: set_eq)
+  also have "… = vote_count (σ q) E"
+    by (simp only: vote_count.simps)
+  finally show ?thesis .
+qed
+
+lemma vote_fraction_profile_map:
+  fixes
+    τ σ :: "'a Preference_Relation ⇒ 'a Preference_Relation" and
+    q :: "'a Preference_Relation" and
+    E E' :: "('a, 'v) Election"
+  assumes
+    inv_στ: "⋀ s. σ (τ s) = s" and
+    inv_τσ: "⋀ s. τ (σ s) = s" and
+    voters: "voters_ℰ E' = voters_ℰ E" and
+    prof: "profile_ℰ E' = τ ∘ profile_ℰ E"
+  shows "vote_fraction q E' = vote_fraction (σ q) E"
+  by (simp only: vote_fraction.simps voters vote_count_profile_map[OF inv_στ inv_τσ voters prof])
+
+lemma profile_map_compat:
+  fixes
+    A :: "'a set" and
+    F :: "('a, 'v) Election ⇒ ('a, 'v) Election" and
+    τ σ :: "'a Preference_Relation ⇒ 'a Preference_Relation" and
+    E E' :: "('a, 'v) Election"
+  assumes
+    inv_στ: "⋀ s. σ (τ s) = s" and
+    inv_τσ: "⋀ s. τ (σ s) = s" and
+    voters: "⋀ E. voters_ℰ (F E) = voters_ℰ E" and
+    prof: "⋀ E. profile_ℰ (F E) = τ ∘ profile_ℰ E" and
+    closed: "⋀ E. E ∈ elections_𝒜 A ⟹ F E ∈ elections_𝒜 A" and
+    rel: "(E, E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+  shows "(F E, F E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+proof -
+  have E_in: "E ∈ elections_𝒜 A" and
+       E'_in: "E' ∈ elections_𝒜 A" and
+       fin_eq: "finite (voters_ℰ E) = finite (voters_ℰ E')" and
+       frac_eq: "∀ q. vote_fraction q E = vote_fraction q E'"
+    using rel
+    unfolding anonymity_homogeneity⇩ℛ.simps
+    by blast+
+  have "∀ q. vote_fraction q (F E) = vote_fraction q (F E')"
+    using vote_fraction_profile_map[OF inv_στ inv_τσ voters prof] frac_eq
+    by metis
+  moreover have "finite (voters_ℰ (F E)) = finite (voters_ℰ (F E'))"
+    using fin_eq
+    unfolding voters .
+  ultimately show ?thesis
+    using closed[OF E_in] closed[OF E'_in]
+    unfolding anonymity_homogeneity⇩ℛ.simps
+    by blast
+qed
+
 subsection ‹Vote Counts and Fractions under Renaming›
 
 text ‹
   Renaming the alternatives with a bijection π permutes the ballots:
   the voters casting ballot r after renaming are exactly the voters casting
-  the preimage ballot before renaming. Voters are untouched, so vote counts
-  and vote fractions transform accordingly.
+  the preimage ballot before renaming. Voters are untouched.
 ›
+
+lemma rel_rename_the_inv_left:
+  fixes
+    π :: "'a ⇒ 'a" and
+    q :: "'a Preference_Relation"
+  assumes bij_π: "bij π"
+  shows "rel_rename (the_inv π) (rel_rename π q) = q"
+proof -
+  have "rel_rename (the_inv π) ∘ rel_rename π = id"
+    using rel_rename_compositional[of "the_inv π" π]
+          bij_the_inv_comp(1)[OF bij_π] rel_rename_id
+    by metis
+  thus ?thesis
+    by (metis comp_apply id_apply)
+qed
+
+lemma rel_rename_the_inv_right:
+  fixes
+    π :: "'a ⇒ 'a" and
+    q :: "'a Preference_Relation"
+  assumes bij_π: "bij π"
+  shows "rel_rename π (rel_rename (the_inv π) q) = q"
+proof -
+  have "rel_rename π ∘ rel_rename (the_inv π) = id"
+    using rel_rename_compositional[of π "the_inv π"]
+          bij_the_inv_comp(2)[OF bij_π] rel_rename_id
+    by metis
+  thus ?thesis
+    by (metis comp_apply id_apply)
+qed
+
+lemma alts_rename_voters:
+  fixes
+    π :: "'a ⇒ 'a" and
+    E :: "('a, 'v) Election"
+  shows "voters_ℰ (alts_rename π E) = voters_ℰ E"
+  by simp
+
+lemma alts_rename_profile:
+  fixes
+    π :: "'a ⇒ 'a" and
+    E :: "('a, 'v) Election"
+  shows "profile_ℰ (alts_rename π E) = rel_rename π ∘ profile_ℰ E"
+  by simp
 
 lemma vote_count_alts_rename:
   fixes
@@ -186,40 +314,8 @@ lemma vote_count_alts_rename:
     E :: "('a, 'v) Election"
   assumes bij_π: "bij π"
   shows "vote_count r (alts_rename π E) = vote_count (rel_rename (the_inv π) r) E"
-proof -
-  have rr_inv: "rel_rename (the_inv π) ∘ rel_rename π = id"
-    using rel_rename_compositional[of "the_inv π" π]
-          bij_the_inv_comp(1)[OF bij_π] rel_rename_id
-    by metis
-  have rr_inv': "rel_rename π ∘ rel_rename (the_inv π) = id"
-    using rel_rename_compositional[of π "the_inv π"]
-          bij_the_inv_comp(2)[OF bij_π] rel_rename_id
-    by metis
-    have pt_inv: "⋀ q. rel_rename (the_inv π) (rel_rename π q) = q"
-    using rr_inv
-    by (metis comp_apply id_apply)
-  have pt_inv': "⋀ q. rel_rename π (rel_rename (the_inv π) q) = q"
-    using rr_inv'
-    by (metis comp_apply id_apply)
-  have set_eq: "{v ∈ voters_ℰ E. rel_rename π (profile_ℰ E v) = r}
-      = {v ∈ voters_ℰ E. profile_ℰ E v = rel_rename (the_inv π) r}"
-  proof (rule Collect_cong)
-    fix v :: "'v"
-    show "(v ∈ voters_ℰ E ∧ rel_rename π (profile_ℰ E v) = r)
-        = (v ∈ voters_ℰ E ∧ profile_ℰ E v = rel_rename (the_inv π) r)"
-      using pt_inv pt_inv'
-      by metis
-  qed
-   have "vote_count r (alts_rename π E)
-      = card {v ∈ voters_ℰ E. rel_rename π (profile_ℰ E v) = r}"
-    unfolding vote_count.simps alts_rename.simps
-    by (simp add: comp_def)
-  also have "… = card {v ∈ voters_ℰ E. profile_ℰ E v = rel_rename (the_inv π) r}"
-    by (simp only: set_eq)
-  also have "… = vote_count (rel_rename (the_inv π) r) E"
-    by (simp only: vote_count.simps)
-  finally show ?thesis .
-qed
+  by (rule vote_count_profile_map[OF rel_rename_the_inv_left[OF bij_π]
+        rel_rename_the_inv_right[OF bij_π] alts_rename_voters alts_rename_profile])
 
 lemma vote_fraction_alts_rename:
   fixes
@@ -227,14 +323,9 @@ lemma vote_fraction_alts_rename:
     r :: "'a Preference_Relation" and
     E :: "('a, 'v) Election"
   assumes bij_π: "bij π"
-  shows "vote_fraction r (alts_rename π E)
-       = vote_fraction (rel_rename (the_inv π) r) E"
-proof -
-  have "voters_ℰ (alts_rename π E) = voters_ℰ E"
-    by simp
-  thus ?thesis
-    by (simp only: vote_fraction.simps vote_count_alts_rename[OF bij_π])
-qed
+  shows "vote_fraction r (alts_rename π E) = vote_fraction (rel_rename (the_inv π) r) E"
+  by (rule vote_fraction_profile_map[OF rel_rename_the_inv_left[OF bij_π]
+        rel_rename_the_inv_right[OF bij_π] alts_rename_voters alts_rename_profile])
 
 subsection ‹Neutrality Action Descends to Anon-Hom Classes›
 
@@ -258,40 +349,21 @@ proof (intro ballI allI impI)
   assume
     stab: "π ∈ alt_stabilizer A" and
     rel: "(E, E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-   have bij_π: "bij π"
+  have bij_π: "bij π"
     using stab
     unfolding alt_stabilizer_rewrite
     by simp
-  have E_in: "E ∈ elections_𝒜 A" and
-       E'_in: "E' ∈ elections_𝒜 A" and
-       fin_eq: "finite (voters_ℰ E) = finite (voters_ℰ E')" and
-       frac_eq: "∀ q. vote_fraction q E = vote_fraction q E'"
+  have E_in: "E ∈ elections_𝒜 A" and E'_in: "E' ∈ elections_𝒜 A"
     using rel
     unfolding anonymity_homogeneity⇩ℛ.simps
     by blast+
- have φ_E: "φ_neutral (elections_𝒜 A) π E = alts_rename π E"
-    by (rule φ_neutral_apply[OF E_in])
-  have φ_E': "φ_neutral (elections_𝒜 A) π E' = alts_rename π E'"
-    by (rule φ_neutral_apply[OF E'_in])
-  have img_E: "alts_rename π E ∈ elections_𝒜 A"
-    using stabilizer_preserves_elections_𝒜 stab E_in
-    by blast
-  have img_E': "alts_rename π E' ∈ elections_𝒜 A"
-    using stabilizer_preserves_elections_𝒜 stab E'_in
-    by blast
-  have "∀ q. vote_fraction q (alts_rename π E) = vote_fraction q (alts_rename π E')"
-    using vote_fraction_alts_rename[OF bij_π] frac_eq
-    by metis
-  moreover have
-    "finite (voters_ℰ (alts_rename π E)) = finite (voters_ℰ (alts_rename π E'))"
-    using fin_eq
-    by simp
-  ultimately show
-    "(φ_neutral (elections_𝒜 A) π E, φ_neutral (elections_𝒜 A) π E')
-        ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-    using img_E img_E'
-    unfolding φ_E φ_E' anonymity_homogeneity⇩ℛ.simps
-    by blast
+  have "(alts_rename π E, alts_rename π E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+    by (rule profile_map_compat[OF rel_rename_the_inv_left[OF bij_π]
+          rel_rename_the_inv_right[OF bij_π] alts_rename_voters alts_rename_profile
+          stabilizer_preserves_elections_𝒜[OF stab] rel])
+  thus "(φ_neutral (elections_𝒜 A) π E, φ_neutral (elections_𝒜 A) π E')
+          ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+    unfolding φ_neutral_apply[OF E_in] φ_neutral_apply[OF E'_in] .
 qed
 
 text ‹
@@ -524,6 +596,15 @@ lemma reversal_carrier_invol:
   using reversal_carrier_elems[OF assms] reverse_reverse_id
   by fastforce 
 
+lemma reversal_carrier_invol_pointwise:
+  fixes
+    g :: "'a rel ⇒ 'a rel" and
+    s :: "'a rel"
+  assumes "g ∈ carrier reversal⇩𝒢"
+  shows "g (g s) = s"
+  using reversal_carrier_invol[OF assms] comp_apply id_apply
+  by metis
+
 lemma reversal_carrier_empty:
   fixes g :: "'a rel ⇒ 'a rel"
   assumes "g ∈ carrier reversal⇩𝒢"
@@ -601,29 +682,8 @@ lemma vote_count_rel_app:
     E :: "('a, 'v) Election"
   assumes g_in: "g ∈ carrier reversal⇩𝒢"
   shows "vote_count q (rel_app g E) = vote_count (g q) E"
-proof -
-  have pt_invol: "⋀ s. g (g s) = s"
-    using reversal_carrier_invol[OF g_in] comp_apply id_apply
-    by metis
-  have set_eq: "{v ∈ voters_ℰ E. g (profile_ℰ E v) = q}
-      = {v ∈ voters_ℰ E. profile_ℰ E v = g q}"
-  proof (rule Collect_cong)
-    fix v :: "'v"
-    show "(v ∈ voters_ℰ E ∧ g (profile_ℰ E v) = q)
-        = (v ∈ voters_ℰ E ∧ profile_ℰ E v = g q)"
-      using pt_invol
-      by metis
-  qed
-  have "vote_count q (rel_app g E)
-      = card {v ∈ voters_ℰ E. g (profile_ℰ E v) = q}"
-    unfolding vote_count.simps rel_app_voters rel_app_profile
-    by (simp add: comp_def)
-  also have "… = card {v ∈ voters_ℰ E. profile_ℰ E v = g q}"
-    by (simp only: set_eq)
-  also have "… = vote_count (g q) E"
-    by (simp only: vote_count.simps)
-  finally show ?thesis .
-qed
+  by (rule vote_count_profile_map[OF reversal_carrier_invol_pointwise[OF g_in]
+        reversal_carrier_invol_pointwise[OF g_in] rel_app_voters rel_app_profile])
 
 lemma vote_fraction_rel_app:
   fixes
@@ -632,8 +692,8 @@ lemma vote_fraction_rel_app:
     E :: "('a, 'v) Election"
   assumes g_in: "g ∈ carrier reversal⇩𝒢"
   shows "vote_fraction q (rel_app g E) = vote_fraction (g q) E"
-  by (simp only: vote_fraction.simps vote_count_rel_app[OF g_in]
-        rel_app_voters)
+  by (rule vote_fraction_profile_map[OF reversal_carrier_invol_pointwise[OF g_in]
+        reversal_carrier_invol_pointwise[OF g_in] rel_app_voters rel_app_profile])
 
 text ‹
   Compatibility: if two elections have the same vote fractions, then so do
@@ -654,34 +714,17 @@ proof (intro ballI allI impI)
   assume
     g_in: "g ∈ carrier reversal⇩𝒢" and
     rel: "(E, E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-  have E_in: "E ∈ elections_𝒜 A" and
-       E'_in: "E' ∈ elections_𝒜 A" and
-       fin_eq: "finite (voters_ℰ E) = finite (voters_ℰ E')" and
-       frac_eq: "∀ q. vote_fraction q E = vote_fraction q E'"
+  have E_in: "E ∈ elections_𝒜 A" and E'_in: "E' ∈ elections_𝒜 A"
     using rel
     unfolding anonymity_homogeneity⇩ℛ.simps
     by blast+
-  have φ_E: "φ_reverse (elections_𝒜 A) g E = rel_app g E"
-    by (rule φ_reverse_apply[OF E_in])
-  have φ_E': "φ_reverse (elections_𝒜 A) g E' = rel_app g E'"
-    by (rule φ_reverse_apply[OF E'_in])
-  have img_E: "rel_app g E ∈ elections_𝒜 A"
-    by (rule reversal_preserves_elections_𝒜[OF g_in E_in])
-  have img_E': "rel_app g E' ∈ elections_𝒜 A"
-    by (rule reversal_preserves_elections_𝒜[OF g_in E'_in])
-  have "∀ q. vote_fraction q (rel_app g E) = vote_fraction q (rel_app g E')"
-    using vote_fraction_rel_app[OF g_in] frac_eq
-    by metis
-  moreover have
-    "finite (voters_ℰ (rel_app g E)) = finite (voters_ℰ (rel_app g E'))"
-    using fin_eq
-    by (cases E, cases E') simp
-  ultimately show
-    "(φ_reverse (elections_𝒜 A) g E, φ_reverse (elections_𝒜 A) g E')
-        ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
-    using img_E img_E'
-    unfolding φ_E φ_E' anonymity_homogeneity⇩ℛ.simps
-    by blast
+  have "(rel_app g E, rel_app g E') ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+    by (rule profile_map_compat[OF reversal_carrier_invol_pointwise[OF g_in]
+          reversal_carrier_invol_pointwise[OF g_in] rel_app_voters rel_app_profile
+          reversal_preserves_elections_𝒜[OF g_in] rel])
+  thus "(φ_reverse (elections_𝒜 A) g E, φ_reverse (elections_𝒜 A) g E')
+          ∈ anonymity_homogeneity⇩ℛ (elections_𝒜 A)"
+    unfolding φ_reverse_apply[OF E_in] φ_reverse_apply[OF E'_in] .
 qed
 
 text ‹

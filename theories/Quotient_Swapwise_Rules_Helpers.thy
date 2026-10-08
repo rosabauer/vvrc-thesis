@@ -820,13 +820,30 @@ lemma swap_dist_avg_to_unanimity:
   shows "votewise_distance swap l_one_avg (A, V, p) (A, V, q)
           = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
 proof -
-  have "\<forall> v \<in> V. q v = (\<lambda> v. R) v"
-    using qR
+  have to_list_R: "to_list V q = to_list V (\<lambda> v. R)"
+  proof -
+    have "to_list V q = map q (sorted_list_of_set V)"
+      using fin
+      by simp
+    also have "\<dots> = map (\<lambda> v. R) (sorted_list_of_set V)"
+      using qR fin
+      by (intro map_cong) auto
+    also have "\<dots> = to_list V (\<lambda> v. R)"
+      using fin
+      by simp
+    finally show ?thesis .
+  qed
+  have "votewise_distance swap l_one_avg (A, V, p) (A, V, q)
+          = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y)) (to_list V p) (to_list V q))"
+    using fin
     by simp
-  thus ?thesis
-    using votewise_non_voters_irrelevant[of swap l_one_avg]
-    unfolding voters_determine_distance_def
-    by blast
+  also have "\<dots> = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y))
+                              (to_list V p) (to_list V (\<lambda> v. R)))"
+    by (simp only: to_list_R)
+  also have "\<dots> = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
+    using fin
+    by simp
+  finally show ?thesis .
 qed
 
 text \<open>
@@ -1453,16 +1470,18 @@ proof -
       have V'_ne: "V' \<noteq> {}"
         using anon_hom_empty_iff[OF rel_t] b_ne True
         by blast
-      have b_X: "(A, V\<^sub>b, p\<^sub>b) \<in> elections_\<A> A"
-        using b_cons[unfolded b_A] strong_unanimity_elections_subset
+            have "(A, V\<^sub>b, p\<^sub>b) \<in> elections_\<K> (strong_unanimity_in A)"
+        using b_cons[unfolded b_A]
         unfolding elections_\<K>.simps
         by blast
+      hence b_X: "(A, V\<^sub>b, p\<^sub>b) \<in> elections_\<A> A"
+        by (rule subsetD[OF strong_unanimity_elections_subset])
       have "((A, V\<^sub>b, p\<^sub>b), ?b') \<in> anonymity_homogeneity\<^sub>\<R> (elections_\<A> A)"
         by (rule unanimity_election_anon_hom_related[OF b_X b_ne R_unan fin_V' V'_ne])
       hence b'_cons: "?b' \<in> ?K"
         by (rule strong_unanimity_in_anon_hom_transfer[OF _ b_cons[unfolded b_A]])
       \<comment> \<open>Both distances collapse to the distance to the constant-R profile,
-          and those agree by the engine lemma.\<close>
+          + they  agree by the engine lemma.\<close>
       have p\<^sub>b_R: "\<forall> v \<in> V. p\<^sub>b v = R"
         using R_unan True
         by simp

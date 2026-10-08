@@ -694,6 +694,33 @@ proof -
 qed
 
 text \<open>
+  The distance to a unanimity-R election on the same voter set does not depend
+  on the ballots of its non-voters: votewise distances only read the ballots of
+  voters (\<open>votewise_non_voters_irrelevant\<close>).
+\<close>
+
+lemma swap_dist_avg_to_unanimity:
+  fixes
+    A :: "'a set" and
+    V :: "'v :: linorder set" and
+    p q :: "('a, 'v) Profile" and
+    R :: "'a Preference_Relation"
+  assumes
+    fin: "finite V" and
+    qR: "\<forall> v \<in> V. q v = R"
+  shows "votewise_distance swap l_one_avg (A, V, p) (A, V, q)
+          = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
+proof -
+  have "\<forall> v \<in> V. q v = (\<lambda> v. R) v"
+    using qR
+    by simp
+  thus ?thesis
+    using votewise_non_voters_irrelevant[of swap l_one_avg]
+    unfolding voters_determine_distance_def
+    by blast
+qed
+
+text \<open>
   One unanimity class: all elections over A in which a finite, nonempty
   electorate unanimously votes R, with empty ballots outside the electorate.
   Conceptually, each such class is a single anonymity-homogeneity class,
@@ -741,35 +768,10 @@ proof -
     unfolding b\<^sub>0_def unanimity_class_def
     by simp
 
-  \<comment> \<open>Computational main step: to_list only evaluates a profile on V, so any
-      profile equal to R on V is indistinguishable from the constant-R profile.\<close>
-  have to_list_R: "to_list V q = to_list V (\<lambda> v. R)"
-    if "\<forall> v \<in> V. q v = R" for q :: "('a, 'v) Profile"
-  proof -
-    have "to_list V q = map q (sorted_list_of_set V)"
-      using fin by simp
-    also have "\<dots> = map (\<lambda> v. R) (sorted_list_of_set V)"
-      using that fin by (intro map_cong) auto
-    also have "\<dots> = to_list V (\<lambda> v. R)"
-      using fin by simp
-    finally show ?thesis .
-  qed
-
-  \<comment> \<open>Hence the distance to ANY same-voter-set class member is the score.\<close>
+  \<comment> \<open>The distance to any same-voter-set class member is the score.\<close>
   have same_V_dist: "?d (A, V, q) = ?s"
     if q_R: "\<forall> v \<in> V. q v = R" for q :: "('a, 'v) Profile"
-  proof -
-    have "?d (A, V, q)
-            = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y))
-                              (to_list V p) (to_list V q))"
-      using fin by simp
-    also have "\<dots> = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y))
-                                   (to_list V p) (to_list V (\<lambda> v. R)))"
-      by (simp only: to_list_R[OF q_R])
-    also have "\<dots> = ?s"
-      using fin by simp
-    finally show ?thesis .
-  qed
+    by (rule swap_dist_avg_to_unanimity[OF fin q_R])
 
   have diff_V_dist: "?d (A', W, q) = \<infinity>"
     if "W \<noteq> V" for A' :: "'a set" and W :: "'v set" and q :: "('a, 'v) Profile"
@@ -892,46 +894,6 @@ proof -
     by auto
   thus ?thesis
     using ne by blast
-qed
-
-
-text \<open>
-  The distance to a unanimity-R election on the same voter set does not
-  depend on the ballots of its non-voters.
-\<close>
-
-lemma swap_dist_avg_to_unanimity:
-  fixes
-    A :: "'a set" and
-    V :: "'v :: linorder set" and
-    p q :: "('a, 'v) Profile" and
-    R :: "'a Preference_Relation"
-  assumes
-    fin: "finite V" and
-    qR: "\<forall> v \<in> V. q v = R"
-  shows "votewise_distance swap l_one_avg (A, V, p) (A, V, q)
-       = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
-proof -
-  have to_list_R: "to_list V q = to_list V (\<lambda> v. R)"
-    proof -
-      have "to_list V q = map q (sorted_list_of_set V)"
-        using fin by simp
-also have "\<dots> = map (\<lambda> v. R) (sorted_list_of_set V)"
-      using qR fin by (intro map_cong) auto
-    also have "\<dots> = to_list V (\<lambda> v. R)"
-      using fin by simp
-    finally show ?thesis .
-  qed
-have "votewise_distance swap l_one_avg (A, V, p) (A, V, q)
-          = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y))
-                            (to_list V p) (to_list V q))"
-  using fin by simp
-also have "\<dots> = l_one_avg (map2 (\<lambda> x y. swap (A, x) (A, y))
-                                 (to_list V p) (to_list V (\<lambda> v. R)))"
-  by (simp only: to_list_R)
-also have "\<dots> = votewise_distance swap l_one_avg (A, V, p) (A, V, \<lambda> v. R)"
-    using fin by simp
-  finally show ?thesis .
 qed
 
 

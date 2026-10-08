@@ -859,65 +859,21 @@ lemma vote_count_rename:
     π :: "'v ⇒ 'v" and
     q :: "'a Preference_Relation" and
     E :: "('a, 'v) Election"
-  assumes bij_π: "bij π"
+  assumes
+    bij_π: "bij π" and
+    fin: "finite (voters_ℰ E)"
   shows "vote_count q (rename π E) = vote_count q E"
 proof -
-  obtain B :: "'a set" and V :: "'v set" and p :: "('a, 'v) Profile" where
-    E_eq: "E = (B, V, p)"
-    using prod_cases3
+  have "(E, rename π E) ∈ anonymity⇩ℛ UNIV"
+    unfolding anonymity⇩ℛ.simps action_induced_rel.simps φ_anon.simps
+              simp_extensional_univ bijection⇩𝒱⇩𝒢_def
+    using bij_π case_prodI rewrite_carrier
+    by auto
+  hence "∀ p. vote_count p E = vote_count p (rename π E)"
+    using anon_rel_vote_count[OF fin]
     by blast
-  have inj_π: "inj π"
-    using bij_π bij_is_inj
-    by blast
-  have set_eq: "{v ∈ π ` V. (p ∘ the_inv π) v = q} = π ` {v ∈ V. p v = q}"
-  proof (intro equalityI subsetI)
-    fix w :: "'v"
-    assume "w ∈ {v ∈ π ` V. (p ∘ the_inv π) v = q}"
-    hence w_img: "w ∈ π ` V" and
-          w_q: "p (the_inv π w) = q"
-      by auto
-    then obtain v :: "'v" where
-      v_V: "v ∈ V" and
-      w_eq: "w = π v"
-      by blast
-    have "the_inv π w = v"
-      unfolding w_eq
-      by (rule the_inv_f_f[OF inj_π])
-    hence "p v = q"
-      using w_q
-      by simp
-    thus "w ∈ π ` {v ∈ V. p v = q}"
-      using v_V w_eq
-      by blast
-  next
-    fix w :: "'v"
-    assume "w ∈ π ` {v ∈ V. p v = q}"
-    then obtain v :: "'v" where
-      v_V: "v ∈ V" and
-      p_q: "p v = q" and
-      w_eq: "w = π v"
-      by blast
-    have "the_inv π w = v"
-      unfolding w_eq
-      by (rule the_inv_f_f[OF inj_π])
-    thus "w ∈ {v ∈ π ` V. (p ∘ the_inv π) v = q}"
-      using v_V p_q w_eq
-      by simp
-  qed
-  have inj_on_votes: "inj_on π {v ∈ V. p v = q}"
-    using inj_π subset_UNIV inj_on_subset
+  thus ?thesis
     by metis
-  have "vote_count q (rename π E) = card {v ∈ π ` V. (p ∘ the_inv π) v = q}"
-    unfolding E_eq
-    by simp
-  also have "… = card (π ` {v ∈ V. p v = q})"
-    by (simp only: set_eq)
-  also have "… = card {v ∈ V. p v = q}"
-    by (rule card_image[OF inj_on_votes])
-  also have "… = vote_count q E"
-    unfolding E_eq
-    by simp
-  finally show ?thesis .
 qed
 
 lemma vote_fraction_rename:
@@ -942,8 +898,16 @@ proof -
     unfolding vtrs
     by (rule card_image[OF inj_V])
   show ?thesis
-    by (simp only: vote_fraction.simps fin_eq emp_eq card_eq
-          vote_count_rename[OF bij_π])
+  proof (cases "finite (voters_ℰ E)")
+    case True
+    thus ?thesis
+      by (simp only: vote_fraction.simps fin_eq emp_eq card_eq vote_count_rename[OF bij_π True])
+  next
+    case False
+    thus ?thesis
+      using fin_eq
+      by simp
+  qed
 qed
 
 text ‹

@@ -1211,10 +1211,10 @@ proof (rule inner_inf_const_imp_simple_on[OF anon_hom_equiv], intro ballI)
       by order
   qed
   \<comment> \<open>Empty voter set: every member of BC is at distance \<open>\<infinity>\<close>.\<close>
-  have inner_empty: "Inf {?d (A, {}, p\<^sub>y) b | b. b \<in> BC} = \<infinity>"
+  have inner_empty: "Inf {?d (A, {}, p\<^sub>y) b | b. b \<in> BC} = Inf {\<infinity>}"
     for p\<^sub>y :: "('a, 'v) Profile"
   proof -
-    have "?d (A, {}, p\<^sub>y) b = \<infinity>" if b_in: "b \<in> BC" for b :: "('a, 'v) Election"
+    have all_inf: "?d (A, {}, p\<^sub>y) b = \<infinity>" if b_in: "b \<in> BC" for b :: "('a, 'v) Election"
     proof -
       obtain A\<^sub>b :: "'a set" and V\<^sub>b :: "'v set" and p\<^sub>b :: "('a, 'v) Profile" where
         b_eq: "b = (A\<^sub>b, V\<^sub>b, p\<^sub>b)"
@@ -1228,10 +1228,12 @@ proof (rule inner_inf_const_imp_simple_on[OF anon_hom_equiv], intro ballI)
         unfolding b_eq
         by simp
     qed
-    hence "{?d (A, {}, p\<^sub>y) b | b. b \<in> BC} = {\<infinity>}"
-      using b0_in_BC
-      by blast
-    thus ?thesis
+    have "{?d (A, {}, p\<^sub>y) b | b. b \<in> BC} = (\<lambda> b. \<infinity>) ` BC"
+      unfolding Setcompr_eq_image
+         by (rule image_cong[OF HOL.refl]) (rule all_inf)
+    also have "\<dots> = {\<infinity>}"
+      by (rule image_constant[OF b0_in_BC])
+    finally show ?thesis
       by simp
   qed
   \<comment> \<open>Both elections lie in the class AC, so they are related; compare the

@@ -384,12 +384,14 @@ proof -
       using linorder_not_less
       by simp
   qed
+ ultimately show ?thesis
+    by simp
+qed
 
 text \<open>
   Simplicity follows whenever the infimum of the distances from a point to a
-  class \<open>B\<close> does not depend on which point of the class \<open>A\<close> is chosen: then any
-  point of \<open>A\<close> witnesses it, since the two-sided infimum over \<open>A\<close> and \<open>B\<close>
-  flattens to that common value.
+  classB  does not depend on which point of the classA  is chosen: then any
+  point of A witnesses it, since the two-sided infimum over A and B  flattens to that common value.
 \<close>
 
 lemma inner_inf_const_imp_simple_on:
@@ -425,9 +427,7 @@ proof (unfold simple_on.simps, intro ballI)
       by simp
   qed
 qed
-  ultimately show ?thesis
-    by simp
-qed
+ 
 
 lemma invar_dist_simple:
   fixes

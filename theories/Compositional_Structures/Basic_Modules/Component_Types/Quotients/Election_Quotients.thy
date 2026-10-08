@@ -746,21 +746,55 @@ definition vote_simplex :: "(rat^'b) set" where
 
 subsubsection \<open>Auxiliary Lemmas\<close>
 
-text \<open>
-  On the elections over a fixed alternative set, all voter sets are finite, so
-  the anonymity-homogeneity relation is an equivalence relation there.
-\<close>
-
-lemma anon_hom_equiv:
-  fixes A :: "'a set"
-  shows "equiv (elections_\<A> A) (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))"
-proof -
-  have "\<forall> E \<in> elections_\<A> A. finite (voters_\<E> E)"
-    unfolding elections_\<A>.simps
+lemma anonymity_homogeneity_is_equivalence:
+  fixes X :: "('a, 'v) Election set"
+  assumes "\<forall> E \<in> X. finite (voters_\<E> E)"
+  shows "equiv X (anonymity_homogeneity\<^sub>\<R> X)"
+proof (unfold equiv_def, safe)
+  fix
+    A B :: "'a set" and
+    V W :: "'v set" and
+    p q :: "'v \<Rightarrow> ('a \<times> 'a) set"
+  assume "((A, V, p), B, W, q) \<in> anonymity_homogeneity\<^sub>\<R> X"
+  thus
+    "(A, V, p) \<in> X" and
+    "(B, W, q) \<in> X"
+    unfolding anonymity_homogeneity\<^sub>\<R>.simps
+    by simp_all
+next
+  show "refl_on X (anonymity_homogeneity\<^sub>\<R> X)"
+    unfolding refl_on_def anonymity_homogeneity\<^sub>\<R>.simps
     by blast
-  thus ?thesis
-    by (rule anonymity_homogeneity_is_equivalence)
+next
+  show "sym (anonymity_homogeneity\<^sub>\<R> X)"
+    unfolding sym_def anonymity_homogeneity\<^sub>\<R>.simps
+    using sup_commute
+    by simp
+next
+  show "Relation.trans (anonymity_homogeneity\<^sub>\<R> X)"
+  proof
+    fix E E' F :: "('a, 'v) Election"
+    assume
+      rel: "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> X" and
+      rel': "(E', F) \<in> anonymity_homogeneity\<^sub>\<R> X"
+    hence "finite (voters_\<E> E')"
+      unfolding anonymity_homogeneity\<^sub>\<R>.simps
+      using assms
+      by fastforce
+    from rel rel' have eq_frac:
+      "(\<forall> r. vote_fraction r E = vote_fraction r E') \<and>
+        (\<forall> r. vote_fraction r E' = vote_fraction r F)"
+      unfolding anonymity_homogeneity\<^sub>\<R>.simps
+      by blast
+    hence "\<forall> r. vote_fraction r E = vote_fraction r F"
+      by metis
+    thus "(E, F) \<in> anonymity_homogeneity\<^sub>\<R> X"
+      using rel rel' snd_conv
+      unfolding anonymity_homogeneity\<^sub>\<R>.simps
+      by blast
+  qed
 qed
+
 
 lemma convex_combination_in_convex_hull:
   fixes
@@ -1075,54 +1109,7 @@ lemma fract_distr_helper:
   using add_rat assms mult.commute mult_rat_cancel distrib_right
   by metis
 
-lemma anonymity_homogeneity_is_equivalence:
-  fixes X :: "('a, 'v) Election set"
-  assumes "\<forall> E \<in> X. finite (voters_\<E> E)"
-  shows "equiv X (anonymity_homogeneity\<^sub>\<R> X)"
-proof (unfold equiv_def, safe)
-  fix
-    A B :: "'a set" and
-    V W :: "'v set" and
-    p q :: "'v \<Rightarrow> ('a \<times> 'a) set"
-  assume "((A, V, p), B, W, q) \<in> anonymity_homogeneity\<^sub>\<R> X"
-  thus
-    "(A, V, p) \<in> X" and
-    "(B, W, q) \<in> X"
-    unfolding anonymity_homogeneity\<^sub>\<R>.simps
-    by simp_all
-next
-  show "refl_on X (anonymity_homogeneity\<^sub>\<R> X)"
-    unfolding refl_on_def anonymity_homogeneity\<^sub>\<R>.simps
-    by blast
-next
-  show "sym (anonymity_homogeneity\<^sub>\<R> X)"
-    unfolding sym_def anonymity_homogeneity\<^sub>\<R>.simps
-    using sup_commute
-    by simp
-next
-  show "Relation.trans (anonymity_homogeneity\<^sub>\<R> X)"
-  proof
-    fix E E' F :: "('a, 'v) Election"
-    assume
-      rel: "(E, E') \<in> anonymity_homogeneity\<^sub>\<R> X" and
-      rel': "(E', F) \<in> anonymity_homogeneity\<^sub>\<R> X"
-    hence "finite (voters_\<E> E')"
-      unfolding anonymity_homogeneity\<^sub>\<R>.simps
-      using assms
-      by fastforce
-    from rel rel' have eq_frac:
-      "(\<forall> r. vote_fraction r E = vote_fraction r E') \<and>
-        (\<forall> r. vote_fraction r E' = vote_fraction r F)"
-      unfolding anonymity_homogeneity\<^sub>\<R>.simps
-      by blast
-    hence "\<forall> r. vote_fraction r E = vote_fraction r F"
-      by metis
-    thus "(E, F) \<in> anonymity_homogeneity\<^sub>\<R> X"
-      using rel rel' snd_conv
-      unfolding anonymity_homogeneity\<^sub>\<R>.simps
-      by blast
-  qed
-qed
+
 
 lemma fract_distr:
   fixes
@@ -1711,6 +1698,22 @@ next
       using election
       by blast
   qed
+qed
+
+text \<open>
+  On the elections over a fixed alternative set, all voter sets are finite, so
+  the anonymity-homogeneity relation is an equivalence relation there.
+\<close>
+
+lemma anon_hom_equiv:
+  fixes A :: "'a set"
+  shows "equiv (elections_\<A> A) (anonymity_homogeneity\<^sub>\<R> (elections_\<A> A))"
+proof -
+  have "\<forall> E \<in> elections_\<A> A. finite (voters_\<E> E)"
+    unfolding elections_\<A>.simps
+    by blast
+  thus ?thesis
+       by (rule anonymity_homogeneity_is_equivalence)
 qed
 
 end
